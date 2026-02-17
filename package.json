@@ -1,0 +1,1 @@
+{"name":"kol-entry-scanner","version":"1.0.0","description":"KOL Entry Scanner - Railway + GitHub deploy","scripts":{"start":"node backend/server.js","postinstall":"cd backend && npm install"},"engines":{"node":"20.x"}}
