@@ -262,6 +262,9 @@ td{padding:9px 11px;white-space:nowrap;}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);}
 .cpbtn2{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:1px 3px;transition:color .12s;}
 .cpbtn2:hover{color:var(--accent);}
+.copied{color:var(--green)!important;}
+.toast{position:fixed;right:18px;bottom:18px;z-index:9999;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 12px;opacity:0;transform:translateY(8px);pointer-events:none;transition:all .18s;}
+.toast.show{opacity:1;transform:translateY(0);}
 
 @media(max-width:1100px){.tlay{grid-template-columns:1fr;}.alay{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr);}.fgrid{grid-template-columns:1fr 1fr;}.topbar{flex-direction:column;align-items:flex-start;}.trow{grid-template-columns:60px 1fr 88px 90px;}.trow>div:nth-child(5),.trow>div:nth-child(6),.trow>div:nth-child(7){display:none;}.thead-t{grid-template-columns:60px 1fr 88px 90px;}.thead-t>div:nth-child(5),.thead-t>div:nth-child(6),.thead-t>div:nth-child(7){display:none;}}
@@ -327,7 +330,7 @@ td{padding:9px 11px;white-space:nowrap;}
       <thead><tr><th onclick="sb('rank')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th>CHAIN</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th><th>VER</th></tr></thead>
       <tbody id="wBody"></tbody>
     </table>
-    <div id="emptyW" class="empty" style="display:none"><div class="ei">⬡</div><p>Nenhuma wallet encontrada</p></div>
+    <div id="emptyW" class="empty" style="display:none" hidden aria-live="polite" aria-hidden="true"><div class="ei">⬡</div><p>Nenhuma wallet encontrada</p></div>
   </div>
 </div>
 
@@ -361,7 +364,7 @@ td{padding:9px 11px;white-space:nowrap;}
       <div class="afhdr">
         <div class="aftitle">⚡ FEED DE ALERTAS</div>
         <div style="display:flex;gap:6px">
-          <button class="btn br bsm" onclick="alerts=[];renderA()">LIMPAR</button>
+          <button class="btn br bsm" onclick="alerts=[];unreadAlerts=0;renderA();updateAlertBadge()">LIMPAR</button>
         </div>
       </div>
       <div class="aflist" id="aList"><div class="noalert">Nenhum alerta — ative o rastreamento nas wallets</div></div>
@@ -374,6 +377,8 @@ td{padding:9px 11px;white-space:nowrap;}
     </div>
   </div>
 </div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 </div><!-- /wrap -->
 
@@ -415,6 +420,8 @@ let cur = 'BRL';
 let cFilter = 'all', sKey = 'rank', sDir = 1;
 let alerts = [], trades = [];
 let tradeCnt = 0, curKol = null;
+let toastTimer = null;
+let unreadAlerts = 0;
 
 // ═══════════════════════════════════════════
 // KOLS (carregados da API - sem dados fictícios)
@@ -604,6 +611,7 @@ function renderStats(){
   document.getElementById('stT').textContent=tradeCnt;
   document.getElementById('stA').textContent=KOLS.filter(k=>k.alertOn).length;
   document.getElementById('stV').textContent=fmt(KOLS.reduce((s,k)=>s+k.vol24,0));
+  updateAlertBadge();
 }
 
 // ═══════════════════════════════════════════
@@ -613,7 +621,7 @@ function setF(f,el){cFilter=f;document.querySelectorAll('.chip').forEach(c=>c.cl
 function sb(k){if(sKey===k)sDir*=-1;else{sKey=k;sDir=1;}renderW();}
 function renderW(){
   let data=[...KOLS];
-  const q=document.getElementById('srch').value.toLowerCase();
+  const q=(document.getElementById('srch').value||'').toLowerCase();
   if(q)data=data.filter(k=>k.name.toLowerCase().includes(q)||k.handle.toLowerCase().includes(q)||k.wallet.toLowerCase().includes(q));
   if(cFilter==='top')data=data.slice(0,10);
   else if(cFilter==='wr80')data=data.filter(k=>k.winRate>=80);
@@ -621,8 +629,16 @@ function renderW(){
   else if(cFilter==='alert')data=data.filter(k=>k.alertOn);
   data.sort((a,b)=>{let va=a[sKey],vb=b[sKey];return typeof va==='string'?sDir*va.localeCompare(vb):sDir*(va-vb);});
   const tb=document.getElementById('wBody'),em=document.getElementById('emptyW');
-  if(!data.length){tb.innerHTML='';em.style.display='block';return;}
+  if(!data.length){
+    tb.innerHTML='';
+    em.style.display='block';
+    em.hidden=false;
+    em.setAttribute('aria-hidden','false');
+    return;
+  }
   em.style.display='none';
+  em.hidden=true;
+  em.setAttribute('aria-hidden','true');
   tb.innerHTML=data.map(k=>{
     const wr=k.winRate,wrc=wr>=80?'var(--green)':wr>=65?'var(--yellow)':'var(--red)';
     const ph=k.pnl>=0?`<span class="pv">+${fmt(k.pnl)}</span>`:`<span class="pnv">-${fmt(Math.abs(k.pnl))}</span>`;
@@ -824,12 +840,19 @@ async function runAI(){
 function pushAlert(type,name,msg){
   const t=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   alerts.unshift({type,name,msg,t});if(alerts.length>50)alerts.pop();
-  renderA();document.getElementById('aBadge').style.display='inline';beep(type);
+  unreadAlerts++;
+  renderA();updateAlertBadge();beep(type);
 }
 function renderA(){
   const el=document.getElementById('aList');
   if(!alerts.length){el.innerHTML='<div class="noalert">Nenhum alerta — ative o rastreamento nas wallets</div>';return;}
   el.innerHTML=alerts.map(a=>`<div class="afitem"><div class="afdot af${a.type}"></div><div class="afbody"><div class="afname">${a.name}</div><div class="afmsg">${a.msg}</div></div><div class="aftime">${a.t}</div></div>`).join('');
+}
+function updateAlertBadge(){
+  const badge=document.getElementById('aBadge');
+  const activeTracked=KOLS.filter(k=>k.alertOn).length;
+  const shouldShow=activeTracked>0 && unreadAlerts>0;
+  badge.style.display=shouldShow?'inline':'none';
 }
 function beep(type){try{if(document.getElementById('cfgN').value!=='sound')return;const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=type==='buy'?900:type==='sell'?440:660;o.type='sine';g.gain.setValueAtTime(.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.35);o.start();o.stop(c.currentTime+.35);}catch(e){}}
 
@@ -862,7 +885,18 @@ function openKol(id){
   ab.style.borderColor=k.alertOn?'var(--red)':'var(--green)';ab.style.color=k.alertOn?'var(--red)':'var(--green)';
   document.getElementById('kolOverlay').classList.add('open');
 }
-function togKA(){if(!curKol)return;curKol.alertOn=!curKol.alertOn;const ab=document.getElementById('kABtn');ab.textContent=curKol.alertOn?'DESATIVAR ALERTA':'ATIVAR ALERTA';ab.style.borderColor=curKol.alertOn?'var(--red)':'var(--green)';ab.style.color=curKol.alertOn?'var(--red)':'var(--green)';if(curKol.alertOn)pushAlert('watch',curKol.name,'Monitoramento ativado para esta wallet');renderW();}
+function togKA(){
+  if(!curKol)return;
+  curKol.alertOn=!curKol.alertOn;
+  const ab=document.getElementById('kABtn');
+  ab.textContent=curKol.alertOn?'DESATIVAR ALERTA':'ATIVAR ALERTA';
+  ab.style.borderColor=curKol.alertOn?'var(--red)':'var(--green)';
+  ab.style.color=curKol.alertOn?'var(--red)':'var(--green)';
+  if(curKol.alertOn)pushAlert('watch',curKol.name,'Monitoramento ativado para esta wallet');
+  renderW();
+  renderStats();
+  updateAlertBadge();
+}
 function closeKbg(e){if(e.target===document.getElementById('kolOverlay'))closeKol();}
 function closeKol(){document.getElementById('kolOverlay').classList.remove('open');}
 
@@ -873,17 +907,40 @@ function sw(tab,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   ['wallets','trades','alerts'].forEach(t=>document.getElementById('tab-'+t).style.display='none');
   document.getElementById('tab-'+tab).style.display='block';
-  if(tab==='alerts')document.getElementById('aBadge').style.display='none';
+  if(tab==='alerts'){unreadAlerts=0;updateAlertBadge();}
 }
 
 // ═══════════════════════════════════════════
 // COPY
 // ═══════════════════════════════════════════
 function cp(addr,el){
-  navigator.clipboard.writeText(addr).catch(()=>{});
+  navigator.clipboard.writeText(addr).then(()=>{
+    showToast('Wallet copiada');
+  }).catch(()=>{
+    showToast('Falha ao copiar');
+  });
   const orig=el.innerHTML||el.textContent;
   if(el.tagName==='BUTTON'){el.textContent='✓';setTimeout(()=>{try{el.innerHTML=orig;}catch(e){}},1300);}
-  else{el.style.color='var(--green)';setTimeout(()=>el.style.color='',1300);}
+  else{
+    const icon=el.querySelector('.cpbtn2');
+    if(icon){
+      const prev=icon.textContent;
+      icon.textContent='✓';
+      el.classList.add('copied');
+      setTimeout(()=>{icon.textContent=prev;el.classList.remove('copied');},1300);
+    }else{
+      el.style.color='var(--green)';
+      setTimeout(()=>el.style.color='',1300);
+    }
+  }
+}
+function showToast(msg){
+  const toast=document.getElementById('toast');
+  if(!toast)return;
+  toast.textContent=msg;
+  toast.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),1400);
 }
 
 // ═══════════════════════════════════════════
@@ -1026,7 +1083,10 @@ updTime(); setInterval(updTime, 30000);
     console.log('[init] SUCESSO:', KOLS.length, 'KOLs carregados');
   }
   
-  renderTicker(); renderW(); renderStats();
+  const searchInput=document.getElementById('srch');
+  if(searchInput && typeof searchInput.value!=='string')searchInput.value='';
+
+  renderTicker(); renderW(); renderStats(); renderA(); updateAlertBadge();
   connectWS();
   setTimeout(()=>{ 
     if(!wsConnected) document.getElementById('liveLabel').textContent = loaded ? (IS_PRODUCTION ? 'API ATIVA' : 'DEMO') : 'ERRO API'; 
