@@ -20,6 +20,7 @@
 .ctog button.active{background:var(--accent);color:#000;}
 .livebadge{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.1em;}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:bl 1.1s ease-in-out infinite;}
+.dot.ws-dot{animation:none;opacity:1;transform:scale(1)}
 @keyframes bl{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
 .cfg-btn{padding:6px 12px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:transparent;border:1px solid var(--border2);color:var(--muted2);cursor:pointer;transition:all .15s;}
 .cfg-btn:hover{border-color:var(--yellow);color:var(--yellow);}

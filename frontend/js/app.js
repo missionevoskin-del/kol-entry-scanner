@@ -12,7 +12,7 @@ import {
 import { fmt, fmtSub, fmtMC } from './utils/format.js';
 import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL } from './api.js';
 import { renderWallets, renderWalletsSkeleton } from './components/wallets.js';
-import { renderTradesList, renderTradeRow } from './components/trades.js';
+import { renderTradesList } from './components/trades.js';
 import { renderAlerts } from './components/alerts.js';
 import { renderTokenDetail, renderTokenEmpty, formatAIBody } from './components/token-panel.js';
 import { renderKolStats, renderKolLinks, renderKolLastTrades } from './components/modals.js';
@@ -131,19 +131,6 @@ function renderTradesFiltered() {
   const tf = $('ttFil')?.value || 'all';
   const result = renderTradesList($('tBody'), state.allTrades, tf, opts());
   $('tEmpty').style.display = result.total ? 'none' : 'block';
-}
-
-function appendTradeRow(tok, prepend = false) {
-  const tbody = $('tBody');
-  const div = document.createElement('div');
-  div.innerHTML = renderTradeRow(tok, opts()).trim();
-  div.querySelector('[data-action="show-token"]')?.addEventListener('click', () => showTokDetail(tok));
-  div.querySelector('[data-action="copy"]')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    copyToClipboard(tok.ca);
-  });
-  if (prepend && tbody.firstChild) tbody.insertBefore(div.firstElementChild, tbody.firstChild);
-  else tbody.appendChild(div.firstElementChild);
 }
 
 // ─── TOKEN PANEL ─────────────────────────────────────────────────────
@@ -276,7 +263,13 @@ function openKol(id) {
   $('kSub').textContent = k.handle + ' · Solana';
   $('kStats').innerHTML = renderKolStats(k, state.cur, state.usdBRL);
   $('kLinks').innerHTML = renderKolLinks(k);
-  const lastTrades = state.allTrades.filter((t) => t.kol?.full === k.full).slice(0, 4);
+  const kolFull = k.full || (k.wallet && k.wallet.length > 25 ? k.wallet : null);
+  const lastTrades = state.allTrades
+    .filter((t) => {
+      const tFull = t.kol?.full || (t.kol?.wallet && t.kol.wallet.length > 25 ? t.kol.wallet : null);
+      return kolFull && tFull === kolFull;
+    })
+    .slice(0, 4);
   lastTrades.forEach((t, i) => (t._index = state.allTrades.indexOf(t)));
   const kLastEl = $('kLastTrades');
   kLastEl.innerHTML = renderKolLastTrades(lastTrades, fmtF);
@@ -350,7 +343,7 @@ function copyFeedback(el) {
       } catch (e) {}
     }, 1300);
   } else {
-    const icon = el.querySelector('.copy-btn');
+    const icon = el.querySelector('.copy-btn, .cpbtn, .cpbtn2');
     if (icon) {
       const prev = icon.textContent;
       icon.textContent = '✓';
@@ -527,32 +520,7 @@ function setupEventDelegation() {
       return;
     }
 
-    const chipEl = e.target.closest('.chip');
-    if (chipEl && chipEl.dataset.filter) {
-      state.cFilter = chipEl.dataset.filter;
-      qsa('.chip').forEach((c) => c.classList.remove('active'));
-      chipEl.classList.add('active');
-      renderW();
-      return;
-    }
-
-    const sortEl = e.target.closest('[data-sort]');
-    if (sortEl) {
-      const key = sortEl.dataset.sort;
-      if (state.sKey === key) state.sDir *= -1;
-      else {
-        state.sKey = key;
-        state.sDir = 1;
-      }
-      renderW();
-      return;
-    }
-
-    const tabEl = e.target.closest('.tab');
-    if (tabEl && tabEl.dataset.tab) {
-      switchTab(tabEl.dataset.tab, tabEl);
-      return;
-    }
+    // chips, tabs, sort: usam handlers inline (setF, sw, sb) — delegation com data-* seria redundante
 
     if (e.target.id === 'btnBRL') setCur('BRL');
     if (e.target.id === 'btnUSD') setCur('USD');
@@ -572,9 +540,7 @@ function setupEventDelegation() {
     })()
   );
 
-  $('pFil')?.addEventListener('change', onPeriodChange);
-  $('ttFil')?.addEventListener('change', renderTradesFiltered);
-  $('kABtn')?.addEventListener('click', togKA);
+  // pFil, ttFil, kABtn: handlers inline no HTML — não duplicar com addEventListener
 }
 
 // Delegation for trade row click (show token) - ignore clicks on copy/buttons
@@ -593,14 +559,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-document.addEventListener('click', (e) => {
-  const copyInRow = e.target.closest('.tca[data-action="copy"]');
-  if (copyInRow) {
-    e.stopPropagation();
-    const val = copyInRow.dataset.value;
-    if (val) copyToClipboard(val);
-  }
-});
+// Copy em .tca já tratado pelo handler principal [data-action="copy"]
 
 // ─── INIT ────────────────────────────────────────────────────────────
 function updTime() {
@@ -628,6 +587,8 @@ async function init() {
       $('brlVal').textContent = 'R$ ' + r.toFixed(2).replace('.', ',');
       renderW();
       renderStats();
+    } else {
+      $('brlVal').textContent = 'R$ —';
     }
   }, BRL_UPDATE_INTERVAL_MS);
 

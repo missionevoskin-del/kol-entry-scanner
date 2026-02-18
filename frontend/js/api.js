@@ -106,7 +106,8 @@ export async function fetchBRLRate() {
  */
 export async function fetchApiStatus() {
   try {
-    const r = await fetch(`${API_BASE}/api/status`);
+    const url = `${API_BASE || ''}/api/status`;
+    const r = await fetch(url);
     if (r.ok) return await r.json();
   } catch (e) {}
   return { helius: false, openai: false, kols: 0 };
@@ -118,7 +119,7 @@ export async function fetchApiStatus() {
  */
 export async function fetchKolsPnL(period = 'daily') {
   try {
-    const r = await fetch(`${API_BASE}/api/kols/pnl?period=${period}`);
+    const r = await fetch(`${API_BASE || ''}/api/kols/pnl?period=${period}`);
     if (r.ok) {
       const data = await r.json();
       return data?.kols || (Array.isArray(data) ? data : []);
@@ -132,10 +133,10 @@ export async function fetchKolsPnL(period = 'daily') {
  */
 export async function fetchKols() {
   try {
-    const r = await fetch(`${API_BASE}/api/kols`);
+    const r = await fetch(`${API_BASE || ''}/api/kols`);
     if (r.ok) {
       const data = await r.json();
-      return Array.isArray(data) ? data : [];
+      return data?.kols ?? (Array.isArray(data) ? data : []);
     }
   } catch (e) {}
   return null;
@@ -147,7 +148,7 @@ export async function fetchKols() {
  */
 export async function refreshPnL(period = 'daily') {
   try {
-    const r = await fetch(`${API_BASE}/api/kols/refresh-pnl`, {
+    const r = await fetch(`${API_BASE || ''}/api/kols/refresh-pnl`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ period }),

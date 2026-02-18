@@ -23,10 +23,11 @@ export function renderKolStats(kol, cur, usdBRL) {
  * Renderiza links do modal de KOL
  */
 export function renderKolLinks(kol) {
+  const walletAddr = kol.full || (kol.wallet && kol.wallet.length > 25 ? kol.wallet : '');
   return `
-    <a class="mlbtn" href="https://solscan.io/account/${kol.full}" target="_blank" rel="noopener">🔍 EXPLORER</a>
-    <a class="mlbtn" href="https://x.com/${kol.handle.replace('@', '')}" target="_blank" rel="noopener">🐦 TWITTER/X</a>
-    <button type="button" class="mlbtn" data-action="copy" data-value="${kol.full}">⎘ COPIAR WALLET</button>
+    <a class="mlbtn" href="https://solscan.io/account/${walletAddr}" target="_blank" rel="noopener">🔍 EXPLORER</a>
+    <a class="mlbtn" href="https://x.com/${(kol.handle || '').replace('@', '')}" target="_blank" rel="noopener">🐦 TWITTER/X</a>
+    <button type="button" class="mlbtn" data-action="copy" data-value="${walletAddr}">⎘ COPIAR WALLET</button>
     <a class="mlbtn" href="https://kolscanbrasil.io/" target="_blank" rel="noopener">📊 KOLSCAN BR</a>
   `;
 }

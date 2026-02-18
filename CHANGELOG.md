@@ -6,6 +6,39 @@ Refatoração do KOL Entry Scanner BR para aparência e organização de produto
 
 ---
 
+## Auditoria e Correções (2025-02)
+
+### Handlers duplicados
+
+- **pFil, ttFil, kABtn**: Removidos `addEventListener` duplicados; mantidos apenas handlers inline no HTML para evitar execução dupla.
+
+### Event delegation vs inline
+
+- **Chips, tabs, sort**: Delegation verificava `data-filter`, `data-tab`, `data-sort` que os elementos não possuem. Código morto removido; chips/tabs/sort continuam via inline (`setF`, `sw`, `sb`).
+
+### Código morto
+
+- **appendTradeRow**: Função removida; nunca era chamada. Fluxo usa `addTrade` → `renderTradesFiltered` → `renderTradesList`.
+
+### Dados KOL incompletos
+
+- **wallet vs full**: Backend (`app.js`) normaliza `full` quando ausente (fallback: `wallet` se length > 25).
+- **wallets.js, modals.js**: Fallback `k.full || (k.wallet se longo)` para copy e links.
+- **openKol lastTrades**: Filtro usa `kolFull` e `tFull` com fallback para KOLs sem `full`.
+
+### Copy-to-clipboard
+
+- **copyFeedback**: Suporte a `.cpbtn` e `.cpbtn2` além de `.copy-btn` para feedback visual em wallet pills e token panel.
+- Removido handler duplicado de copy em `.tca`; já tratado pelo handler principal.
+
+### APIs e erros
+
+- **fetchBRLRate**: Exibe "R$ —" no `setInterval` quando fetch falha (antes só na init).
+- **fetchApiStatus, fetchKols, fetchKolsPnL, refreshPnL**: Uso seguro de `API_BASE || ''` para URLs relativas em produção.
+- **fetchKols**: Trata `{ kols }` e array direto via `data?.kols ?? (Array.isArray(data) ? data : [])`.
+
+---
+
 ## Fase 1 — Refatoração de Código
 
 ### Frontend modular

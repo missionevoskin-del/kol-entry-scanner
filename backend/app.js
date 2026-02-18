@@ -56,6 +56,7 @@ function rankKolsForPeriod(period = 'daily') {
   return kols
     .map((k) => ({
       ...k,
+      full: k.full || (k.wallet && String(k.wallet).length > 25 ? k.wallet : k.full),
       rank: rankPnl.get(k.id) || 999,
       rankPnl: rankPnl.get(k.id) || 999,
       rankWinRate: rankWinRate.get(k.id) || 999,

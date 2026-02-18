@@ -47,7 +47,7 @@ export function renderWallets(container, emptyEl, data, options = {}) {
         <td style="color:var(--muted2);font-size:11px">#${k.rankPnl}</td>
         <td><div class="kn">${k.name}</div><div class="kh">${k.handle}</div></td>
         <td>
-          <div class="wpill" data-action="copy" data-value="${k.full}">
+          <div class="wpill" data-action="copy" data-value="${k.full || (k.wallet && k.wallet.length > 25 ? k.wallet : '')}">
             ${k.wallet}<button class="cpbtn2" aria-label="Copiar wallet">⎘</button>
           </div>
         </td>
