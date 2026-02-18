@@ -1,0 +1,76 @@
+/**
+ * KOL Entry Scanner BR - Design Tokens
+ * Sistema de design para consistência visual
+ */
+
+:root {
+  /* Cores base */
+  --color-bg: #04080c;
+  --color-bg-2: #070d13;
+  --color-surface: #0b141c;
+  --color-surface-2: #0e1c27;
+  --color-border: #152233;
+  --color-border-2: #1e3045;
+
+  /* Cores semânticas */
+  --color-accent: #00d4ff;
+  --color-green: #00ff87;
+  --color-red: #ff3b5c;
+  --color-yellow: #ffcc00;
+  --color-purple: #b06fff;
+  --color-orange: #ff7c40;
+
+  /* Texto */
+  --color-text: #ddeef8;
+  --color-text-muted: #3d6070;
+  --color-text-muted-2: #5a7d8f;
+
+  /* Tipografia */
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-sans: 'DM Sans', sans-serif;
+
+  /* Espaçamento (escala 4px) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  /* Bordas */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 0 20px rgba(0, 212, 255, 0.15);
+
+  /* Transições */
+  --transition-fast: 0.12s ease;
+  --transition-normal: 0.17s ease;
+  --transition-slow: 0.28s ease;
+
+  /* Aliases para compatibilidade */
+  --bg: var(--color-bg);
+  --bg2: var(--color-bg-2);
+  --surface: var(--color-surface);
+  --surface2: var(--color-surface-2);
+  --border: var(--color-border);
+  --border2: var(--color-border-2);
+  --accent: var(--color-accent);
+  --green: var(--color-green);
+  --red: var(--color-red);
+  --yellow: var(--color-yellow);
+  --purple: var(--color-purple);
+  --orange: var(--color-orange);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --muted2: var(--color-text-muted-2);
+  --mono: var(--font-mono);
+  --display: var(--font-display);
+  --sans: var(--font-sans);
+}
