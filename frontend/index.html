@@ -43,30 +43,19 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .cfg-btn:hover{border-color:var(--yellow);color:var(--yellow);}
 
 /* ── BANNER SETUP ── */
-.banner-setup{background:linear-gradient(90deg,rgba(255,204,0,.15),rgba(255,204,0,.06));border-bottom:1px solid rgba(255,204,0,.35);padding:10px 16px;}
-.banner-inner{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:3px;}
-.banner-inner span{font-family:var(--sans);font-size:13px;color:var(--yellow);}
-.banner-inner small{font-family:var(--mono);font-size:10px;color:var(--muted2);}
-.key-security-note{font-size:11px;color:var(--muted2);margin-top:4px;}
+.banner-setup{background:linear-gradient(90deg,rgba(255,204,0,.12),rgba(255,204,0,.04));border-bottom:1px solid rgba(255,204,0,.3);padding:6px 16px;}
+.banner-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.banner-inner span{font-family:var(--sans);font-size:12px;color:var(--yellow);}
+.banner-inner small{font-family:var(--mono);font-size:9px;color:var(--muted2);}
+.key-security-note{font-size:10px;color:var(--muted2);}
 .loading-cell{opacity:0.5;}
 .spinner-inline{display:inline-block;width:10px;height:10px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:4px;}
 
-/* ── TICKER ── */
-.ticker{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 0;overflow:hidden;display:flex;align-items:center;margin-bottom:16px;}
-.tlbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent);padding:0 11px;flex-shrink:0;border-right:1px solid var(--border);margin-right:10px;}
-.tscroll{display:flex;gap:22px;animation:stk 38s linear infinite;white-space:nowrap;}
-@keyframes stk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.ti{font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px;}
-.ti .tn{color:var(--text);font-weight:700;}
-.ti.up .tv{color:var(--green);}
-.ti.down .tv{color:var(--red);}
-
 /* ── STATS ── */
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px;}
-.stat{background:var(--surface);border:1px solid var(--border);padding:10px 12px;position:relative;overflow:hidden;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.stat{background:var(--surface);border:1px solid var(--border);padding:10px 14px;position:relative;overflow:hidden;}
 .stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
-.s1::after{background:var(--accent);}.s2::after{background:var(--green);}.s3::after{background:var(--red);}
-.s4::after{background:var(--yellow);}.s5::after{background:var(--purple);}.s6::after{background:var(--orange);}
+.s1::after{background:var(--accent);}.s2::after{background:var(--green);}.s3::after{background:var(--yellow);}.s4::after{background:var(--purple);}
 .slbl{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);margin-bottom:4px;}
 .sval{font-family:var(--mono);font-size:18px;font-weight:700;}
 .ssub{font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:1px;}
@@ -277,8 +266,8 @@ td{padding:9px 11px;white-space:nowrap;}
 .toast{position:fixed;right:18px;bottom:18px;z-index:9999;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 12px;opacity:0;transform:translateY(8px);pointer-events:none;transition:all .18s;}
 .toast.show{opacity:1;transform:translateY(0);}
 
-@media(max-width:1100px){.tlay{grid-template-columns:1fr;}.alay{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(3,1fr);}}
-@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr);}.fgrid{grid-template-columns:1fr 1fr;}.topbar{flex-direction:column;align-items:flex-start;}.trow{grid-template-columns:60px 1fr 88px 90px;}.trow>div:nth-child(5),.trow>div:nth-child(6),.trow>div:nth-child(7){display:none;}.thead-t{grid-template-columns:60px 1fr 88px 90px;}.thead-t>div:nth-child(5),.thead-t>div:nth-child(6),.thead-t>div:nth-child(7){display:none;}}
+@media(max-width:1100px){.tlay{grid-template-columns:1fr;}.alay{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:700px){.stats{grid-template-columns:1fr;}.fgrid{grid-template-columns:1fr 1fr;}.topbar{flex-direction:column;align-items:flex-start;}.trow{grid-template-columns:60px 1fr 88px 90px;}.trow>div:nth-child(5),.trow>div:nth-child(6),.trow>div:nth-child(7){display:none;}.thead-t{grid-template-columns:60px 1fr 88px 90px;}.thead-t>div:nth-child(5),.thead-t>div:nth-child(6),.thead-t>div:nth-child(7){display:none;}}
 </style>
 </head>
 <body>
@@ -288,8 +277,8 @@ td{padding:9px 11px;white-space:nowrap;}
 <!-- BANNER SETUP (mostrar quando Helius não configurado) -->
 <div id="banner-setup" class="banner-setup" style="display:none">
   <div class="banner-inner">
-    <span>⚙️ Configure sua <strong>HELIUS_API_KEY</strong> no Railway para monitorar trades em tempo real.</span>
-    <small>Sem a key, as wallets são exibidas mas os trades não são monitorados.</small>
+    <span>⚙️ Configure <strong>HELIUS_API_KEY</strong> no Railway para trades em tempo real.</span>
+    <small>Sem a key: wallets visíveis, trades não monitorados.</small>
   </div>
 </div>
 
@@ -303,23 +292,16 @@ td{padding:9px 11px;white-space:nowrap;}
     <div class="brlbox"><div><div class="bl">USD / BRL</div><div class="bv" id="brlVal">R$ 5,12</div><div class="bs" id="brlTime">—</div></div></div>
     <div class="ctog"><button id="btnBRL" class="active" onclick="setCur('BRL')">R$ BRL</button><button id="btnUSD" onclick="setCur('USD')">$ USD</button></div>
     <div class="livebadge"><div class="dot" id="wsDot"></div><span id="liveLabel">CONECTANDO...</span></div>
+    <button class="cfg-btn" onclick="openSettingsModal()" title="Configurações">⚙</button>
   </div>
-</div>
-
-<!-- TICKER -->
-<div class="ticker">
-  <div class="tlbl">⚡ TOP KOLs</div>
-  <div class="tscroll" id="tkr"></div>
 </div>
 
 <!-- STATS -->
 <div class="stats">
   <div class="stat s1"><div class="slbl">Wallets</div><div class="sval ca" id="stW">0</div></div>
   <div class="stat s2"><div class="slbl">PnL Total</div><div class="sval" id="stP">—</div><div class="ssub" id="stPs"></div></div>
-  <div class="stat s3"><div class="slbl">Win Rate Médio</div><div class="sval" id="stWR">—</div></div>
-  <div class="stat s4"><div class="slbl">Trades Detectados</div><div class="sval cy" id="stT">0</div></div>
-  <div class="stat s5"><div class="slbl">Alertas</div><div class="sval cp" id="stA">0</div></div>
-  <div class="stat s6"><div class="slbl">Volume 24h</div><div class="sval co" id="stV">—</div></div>
+  <div class="stat s3"><div class="slbl">Trades ao Vivo</div><div class="sval cy" id="stT">0</div></div>
+  <div class="stat s4"><div class="slbl">Alertas Ativos</div><div class="sval cp" id="stA">0</div></div>
 </div>
 
 <!-- TABS -->
@@ -346,7 +328,7 @@ td{padding:9px 11px;white-space:nowrap;}
   </div>
   <div class="twrap">
     <table>
-      <thead><tr><th onclick="sb('rankPnl')">RANK PNL↕</th><th onclick="sb('rankWinRate')">RANK WR↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th>CHAIN</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th><th>VER</th></tr></thead>
+      <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th><th>VER</th></tr></thead>
       <tbody id="wBody"></tbody>
     </table>
     <div id="emptyW" class="empty" style="display:none" hidden aria-live="polite" aria-hidden="true"><div class="ei">⬡</div><p>Nenhuma wallet encontrada</p></div>
@@ -371,7 +353,7 @@ td{padding:9px 11px;white-space:nowrap;}
     <!-- TOKEN DETAIL PANEL -->
     <div class="tpanel" id="tokenPanel">
       <div class="tphdr"><div class="tptitle">DETALHE DO TOKEN</div><div class="tpsub">Clique em um trade para ver</div></div>
-      <div id="tokDetail"><div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades ao vivo</h3><p>Quando um KOL comprar ou vender um token, o trade aparecerá no feed à esquerda.</p><p>Clique em qualquer trade para ver:</p><ul style="text-align:left;margin:8px 0;padding-left:18px;font-size:10px;color:var(--muted2)"><li>📊 Market cap, liquidez e volume</li><li>📈 Ratio compras/vendas 24h</li><li>🔗 Links: Solscan, DexScreener, Rugcheck</li><li>🤖 Análise IA com botão ANALISAR</li></ul><small>Configure HELIUS_API_KEY no Railway para receber trades em tempo real.</small></div></div>
+      <div id="tokDetail"><div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades</h3><p>Clique em um trade no feed para ver market cap, liquidez e análise IA.</p><small>Configure HELIUS_API_KEY no Railway para receber trades em tempo real.</small></div></div>
     </div>
   </div>
 </div>
@@ -392,15 +374,7 @@ td{padding:9px 11px;white-space:nowrap;}
       <div class="cfghdr">⚙️ NOTIFICAÇÃO</div>
       <div class="cfgbody">
         <div class="cfgrow"><div class="cfglbl">Tipo</div><select class="iginput" id="cfgN"><option value="visual">Visual</option><option value="sound">Visual + Som</option></select></div>
-        <div class="cfgrow">
-          <div class="cfglbl">Prompt IA Personalizado</div>
-          <textarea class="iginput" id="aiPrompt" rows="7" placeholder="Ex: priorize narrativas de entrada de curto prazo, risco de rug, liquidez e contexto do KOL"></textarea>
-          <div style="display:flex;gap:6px;margin-top:6px">
-            <button class="btn bg bsm" onclick="saveAIPrompt()">SALVAR PROMPT</button>
-            <button class="btn by bsm" onclick="resetAIPrompt()">RESETAR</button>
-          </div>
-          <div style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Esse texto é enviado junto para o GPT-4o mini no botão ANALISAR.</div>
-        </div>
+        <div class="cfgrow"><button class="btn bg bsm" onclick="openSettingsModal()">⚙️ Prompt IA (ANALISAR)</button></div>
       </div>
     </div>
   </div>
@@ -410,22 +384,40 @@ td{padding:9px 11px;white-space:nowrap;}
 
 </div><!-- /wrap -->
 
+<!-- ═══ SETTINGS MODAL (Prompt IA, etc.) ═══ -->
+<div class="moverlay" id="settingsOverlay" onclick="closeSettingsBg(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="mx" onclick="closeSettingsModal()">✕</button>
+    <div class="mtitle">CONFIGURAÇÕES</div>
+    <div class="msub">Prompt IA usado no botão ANALISAR</div>
+    <div class="mrow">
+      <label>Prompt IA Personalizado</label>
+      <textarea id="aiPrompt" rows="5" placeholder="Ex: priorize narrativas de curto prazo, risco de rug, liquidez" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px;outline:none;width:100%;resize:vertical;min-height:80px"></textarea>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:4px">Enviado junto para o GPT-4o mini ao clicar em ANALISAR.</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn bp" onclick="saveAIPrompt();closeSettingsModal()">SALVAR</button>
+      <button class="btn by" onclick="resetAIPrompt()">RESETAR</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ KOL MODAL ═══ -->
 <div class="moverlay" id="kolOverlay" onclick="closeKbg(event)">
   <div class="kmodal">
     <button class="mx" onclick="closeKol()">✕</button>
     <div class="mtitle" id="kTitle"></div>
     <div class="msub" id="kSub"></div>
+    <div class="msec2">🔔 ALERTA DE ENTRY</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button class="btn bsm" id="kABtn" onclick="togKA()" style="padding:7px 15px;font-size:11px;border:1px solid var(--green);color:var(--green);background:transparent">ATIVAR ALERTA</button>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Notificar quando esta wallet fizer um trade</span>
+    </div>
     <div class="mgrid" id="kStats"></div>
     <div class="msec2">🔗 LINKS</div>
     <div class="kmlinks" id="kLinks"></div>
     <div class="msec2">📊 ÚLTIMAS 4 TRADES</div>
     <div class="kLastTrades" id="kLastTrades"></div>
-    <div class="msec2">⚙️ ALERTA DE ENTRY</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-      <button class="btn bsm" id="kABtn" onclick="togKA()" style="padding:7px 15px;font-size:11px;border:1px solid var(--green);color:var(--green);background:transparent">ATIVAR ALERTA</button>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Notificar quando esta wallet fizer um trade</span>
-    </div>
   </div>
 </div>
 
@@ -480,7 +472,7 @@ function setCur(c){
   document.getElementById('btnBRL').classList.toggle('active',c==='BRL');
   document.getElementById('btnUSD').classList.toggle('active',c==='USD');
   document.getElementById('brlVal').textContent=c==='BRL'?'R$ '+USD_BRL.toFixed(2).replace('.',','):'$ 1.00';
-  renderW();renderStats();renderTicker();
+  renderW();renderStats();
 }
 function updTime(){document.getElementById('brlTime').textContent=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 
@@ -489,7 +481,7 @@ async function fetchBRLRate(){
     const res=await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
     const data=await res.json();
     const rate=parseFloat(data?.USDBRL?.bid||data?.USDBRL?.ask);
-    if(rate && !isNaN(rate)){USD_BRL=rate;document.getElementById('brlVal').textContent='R$ '+rate.toFixed(2).replace('.',',');renderW();renderStats();renderTicker();}
+    if(rate && !isNaN(rate)){USD_BRL=rate;document.getElementById('brlVal').textContent='R$ '+rate.toFixed(2).replace('.',',');renderW();renderStats();}
   }catch(e){document.getElementById('brlVal').textContent='R$ —';}
 }
 
@@ -562,7 +554,6 @@ function handlePnLUpdate(data) {
   });
   renderW();
   renderStats();
-  renderTicker();
   console.log(`[WS] PnL atualizado: ${updatedKols.length} KOLs (${group}, ${period || 'daily'})`);
 }
 
@@ -626,17 +617,6 @@ async function analyzeTokenAI(tok){
 }
 
 // ═══════════════════════════════════════════
-// TICKER
-// ═══════════════════════════════════════════
-function renderTicker(){
-  const items=KOLS.slice(0,8).map(k=>{
-    const d=k.pnl>=0?'up':'down',s=k.pnl>=0?'▲':'▼';
-    return`<span class="ti ${d}"><span class="tn">${k.name}</span><span class="tv">${s}\u00a0${fmt(Math.abs(k.pnl))}\u00a0(${k.winRate}%\u00a0WR)</span></span><span style="color:var(--border2)">·</span>`;
-  }).join('');
-  document.getElementById('tkr').innerHTML=items+items;
-}
-
-// ═══════════════════════════════════════════
 // STATS
 // ═══════════════════════════════════════════
 function renderStats(){
@@ -646,12 +626,8 @@ function renderStats(){
   pe.textContent=(tp>=0?'+':'')+fmt(Math.abs(tp));
   pe.className='sval '+(tp>=0?'cg':'cr');
   document.getElementById('stPs').textContent=fmtSub(Math.abs(tp));
-  const aw=KOLS.length?Math.round(KOLS.reduce((s,k)=>s+k.winRate,0)/KOLS.length):0;
-  const we=document.getElementById('stWR');
-  we.textContent=aw+'%';we.className='sval '+(aw>=75?'cg':aw>=60?'cy':'cr');
   document.getElementById('stT').textContent=tradeCnt;
   document.getElementById('stA').textContent=KOLS.filter(k=>k.alertOn).length;
-  document.getElementById('stV').textContent=fmt(KOLS.reduce((s,k)=>s+k.vol24,0));
   updateAlertBadge();
 }
 
@@ -699,10 +675,8 @@ function renderW(){
     const wrCell=k.winRate===undefined&&k._pnlUpdated===undefined?'<span class="spinner-inline"></span>—':`<span style="color:${wr>=80?'var(--green)':wr>=65?'var(--yellow)':'var(--red)'}">${wr}%</span>`;
     return`<tr onclick="openKol(${k.id})">
       <td style="color:var(--muted2);font-size:11px">#${k.rankPnl}</td>
-      <td style="color:var(--muted2);font-size:11px">#${k.rankWinRate}</td>
       <td><div class="kn">${k.name}</div><div class="kh">${k.handle}</div></td>
       <td><div class="wpill" onclick="event.stopPropagation();cp('${k.full}',this)">${k.wallet}<button class="cpbtn2">⎘</button></div></td>
-      <td><span class="cbadge c${k.chain.toLowerCase()}">${k.chain}</span></td>
       <td>${pnlCell}<div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${fmtSub(Math.abs(k.pnl||0))}</div></td>
       <td><div class="wrw"><div class="wrbar"><div class="wrfill" style="width:${(wr||0)}%;background:${wrc}"></div></div>${wrCell}</div></td>
       <td style="color:var(--muted2)">${k.trades}</td>
@@ -758,13 +732,13 @@ function appendTRow(tok,prepend=true){
     <div style="display:flex;align-items:center"><span class="ttag ${tok.type}-tag">${tok.type==='buy'?'COMPRA':'VENDA'}</span></div>
     <div style="display:flex;align-items:center;font-family:var(--mono);font-weight:700;color:${vc}">${fmt(tok.valUsd)}</div>
     <div class="tmc"><div class="mcv">${fmtMC(tok.mc)}</div><div class="mclbl">Market Cap</div></div>
-    <div class="tkol"><span class="cbadge c${(tok.kol?.chain||'SOL').toLowerCase()}">${tok.kol?.chain||'SOL'}</span>${tok.kol?.name||'?'}</div>
+    <div class="tkol">${tok.kol?.name||'?'}</div>
     <div class="tage">${tok.age}</div>`;
   div.addEventListener('click',()=>showTokDetail(tok));
   if(prepend)tbody.insertBefore(div,tbody.firstChild);
   else tbody.appendChild(div);
 }
-function clearTrades(){allTrades=[];document.getElementById('tBody').innerHTML='';document.getElementById('tEmpty').style.display='block';document.getElementById('tokDetail').innerHTML='<div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades ao vivo</h3><p>Quando um KOL comprar ou vender um token, o trade aparecerá no feed à esquerda.</p><p>Clique em qualquer trade para ver detalhes.</p><small>Configure HELIUS_API_KEY no Railway para receber trades em tempo real.</small></div>';}
+function clearTrades(){allTrades=[];document.getElementById('tBody').innerHTML='';document.getElementById('tEmpty').style.display='block';document.getElementById('tokDetail').innerHTML='<div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades</h3><p>Clique em um trade no feed para ver market cap, liquidez e análise IA.</p><small>Configure HELIUS_API_KEY no Railway.</small></div>';}
 
 // ═══════════════════════════════════════════
 // TOKEN DETAIL + AI
@@ -815,7 +789,7 @@ async function showTokDetail(tok){
     <div class="tplinks">
       <a class="tplnk" href="${expUrl}" target="_blank">🔍 EXPLORER</a>
       <a class="tplnk" href="${dexUrl}" target="_blank">📊 DEXSCREENER</a>
-      <a class="tplnk" href="https://rugcheck.xyz/" target="_blank">🛡 RUGCHECK</a>
+      <a class="tplnk" href="https://rugcheck.xyz/tokens/${tok.ca}" target="_blank">🛡 RUGCHECK</a>
       <a class="tplnk" href="https://birdeye.so/token/${tok.ca}" target="_blank">🦅 BIRDEYE</a>
     </div>
     <div style="padding:0 13px;margin-bottom:6px">
@@ -1021,6 +995,14 @@ function loadAIPrompt(){
   if(!input)return;
   input.value=getCustomAIPrompt();
 }
+function openSettingsModal(){
+  loadAIPrompt();
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettingsModal(){
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+function closeSettingsBg(e){if(e.target===document.getElementById('settingsOverlay'))closeSettingsModal();}
 
 // ═══════════════════════════════════════════
 // PnL POR PERÍODO - Sistema Otimizado
@@ -1062,7 +1044,6 @@ async function loadKolsWithPnL(period = 'daily') {
   pnlLoading = false;
   renderW();
   renderStats();
-  renderTicker();
 }
 
 /**
@@ -1178,7 +1159,7 @@ fetchBRLRate(); setInterval(fetchBRLRate, 5*60*1000);
   if(searchInput && typeof searchInput.value!=='string')searchInput.value='';
   loadAIPrompt();
 
-  renderTicker(); renderW(); renderStats(); renderA(); updateAlertBadge();
+  renderW(); renderStats(); renderA(); updateAlertBadge();
   connectWS();
   setTimeout(()=>{ 
     const liveEl = document.getElementById('liveLabel');
