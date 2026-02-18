@@ -44,9 +44,9 @@ helius.start((trade) => {
   broadcast({ type: 'trade', data: trade });
 });
 
-pnlTracker.start((updatedKols, groupName) => {
-  broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, timestamp: Date.now() } });
-  console.log(`[server] PnL atualizado: ${updatedKols.length} KOLs (${groupName})`);
+pnlTracker.start((updatedKols, groupName, period) => {
+  broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, period: period || 'daily', timestamp: Date.now() } });
+  console.log(`[server] PnL atualizado: ${updatedKols.length} KOLs (${groupName}, ${period || 'daily'})`);
 });
 
 console.log('[server] Sistema de polling escalonado iniciado');

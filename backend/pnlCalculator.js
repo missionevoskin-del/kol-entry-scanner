@@ -278,13 +278,22 @@ async function updateKolPnL(kol, period = 'daily') {
 
   try {
     const pnlData = await calculateWalletPnL(kol.full, period);
+    const updatedAt = Date.now();
+    kol.metrics = kol.metrics || {};
+    kol.metrics[period] = {
+      pnl: pnlData.pnl,
+      winRate: pnlData.winRate,
+      trades: pnlData.trades,
+      volume: pnlData.volume,
+      updatedAt,
+    };
     
-    // Atualizar os dados do KOL diretamente (mutação)
+    // Manter campos legados sincronizados com o último período atualizado.
     kol.pnl = pnlData.pnl;
-    kol.winRate = pnlData.winRate > 0 ? pnlData.winRate : kol.winRate;
-    kol.trades = pnlData.trades > 0 ? pnlData.trades : kol.trades;
+    kol.winRate = pnlData.winRate;
+    kol.trades = pnlData.trades;
     kol.vol24 = pnlData.volume;
-    kol._pnlUpdated = Date.now();
+    kol._pnlUpdated = updatedAt;
     kol._pnlPeriod = period;
     
     console.log(`[pnlCalc] ${kol.name}: PnL=${pnlData.pnl} | WR=${pnlData.winRate}% | Trades=${pnlData.trades}`);

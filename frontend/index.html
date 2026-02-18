@@ -327,7 +327,7 @@ td{padding:9px 11px;white-space:nowrap;}
   </div>
   <div class="twrap">
     <table>
-      <thead><tr><th onclick="sb('rank')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th>CHAIN</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th><th>VER</th></tr></thead>
+      <thead><tr><th onclick="sb('rankPnl')">RANK PNL↕</th><th onclick="sb('rankWinRate')">RANK WR↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th>CHAIN</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th><th>VER</th></tr></thead>
       <tbody id="wBody"></tbody>
     </table>
     <div id="emptyW" class="empty" style="display:none" hidden aria-live="polite" aria-hidden="true"><div class="ei">⬡</div><p>Nenhuma wallet encontrada</p></div>
@@ -373,6 +373,15 @@ td{padding:9px 11px;white-space:nowrap;}
       <div class="cfghdr">⚙️ NOTIFICAÇÃO</div>
       <div class="cfgbody">
         <div class="cfgrow"><div class="cfglbl">Tipo</div><select class="iginput" id="cfgN"><option value="visual">Visual</option><option value="sound">Visual + Som</option></select></div>
+        <div class="cfgrow">
+          <div class="cfglbl">Prompt IA Personalizado</div>
+          <textarea class="iginput" id="aiPrompt" rows="7" placeholder="Ex: priorize narrativas de entrada de curto prazo, risco de rug, liquidez e contexto do KOL"></textarea>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn bg bsm" onclick="saveAIPrompt()">SALVAR PROMPT</button>
+            <button class="btn by bsm" onclick="resetAIPrompt()">RESETAR</button>
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Esse texto é enviado junto para o GPT-4o mini no botão ANALISAR.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -417,11 +426,12 @@ const WS_URL = IS_PRODUCTION
 // ═══════════════════════════════════════════
 const USD_BRL = 5.12;
 let cur = 'BRL';
-let cFilter = 'all', sKey = 'rank', sDir = 1;
+let cFilter = 'all', sKey = 'rankPnl', sDir = 1;
 let alerts = [], trades = [];
 let tradeCnt = 0, curKol = null;
 let toastTimer = null;
 let unreadAlerts = 0;
+const AI_PROMPT_STORAGE_KEY = 'kolscan_ai_prompt';
 
 // ═══════════════════════════════════════════
 // KOLS (carregados da API - sem dados fictícios)
@@ -513,7 +523,9 @@ function handleWSTrade(data){
  */
 function handlePnLUpdate(data) {
   if(!data?.kols?.length) return;
-  const { kols: updatedKols, group } = data;
+  const { kols: updatedKols, group, period } = data;
+  // Evita sobrescrever visão semanal/mensal com updates diários de background.
+  if(period && currentPeriod !== 'daily' && period !== currentPeriod) return;
   const alertOnMap = {};
   KOLS.forEach(k => { if(k.full) alertOnMap[k.full] = k.alertOn; });
   KOLS.length = 0;
@@ -523,7 +535,7 @@ function handlePnLUpdate(data) {
   renderW();
   renderStats();
   renderTicker();
-  console.log(`[WS] PnL atualizado: ${updatedKols.length} KOLs (${group}), rank recalculado`);
+  console.log(`[WS] PnL atualizado: ${updatedKols.length} KOLs (${group}, ${period || 'daily'})`);
 }
 
 // ═══════════════════════════════════════════
@@ -568,12 +580,13 @@ async function fetchTokenData(ca, chain='solana'){
 // OPENAI GPT-4o mini — AI analysis via backend
 // ═══════════════════════════════════════════
 async function analyzeTokenAI(tok){
+  const customPrompt = getCustomAIPrompt();
   const tokenPayload = { ca: tok.ca, name: tok.name, symbol: tok.symbol, mc: tok.mc, liquidity: tok.liq, volume24h: tok.vol24h || 0, buys: tok.buys, sells: tok.sells, change: tok.change };
   try {
     const r = await fetch(`${API_BASE||''}/api/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: tokenPayload, kol: tok.kol, tradeType: tok.type })
+      body: JSON.stringify({ token: tokenPayload, kol: tok.kol, tradeType: tok.type, customPrompt })
     });
     if(r.ok) {
       const d = await r.json();
@@ -605,7 +618,7 @@ function renderStats(){
   pe.textContent=(tp>=0?'+':'')+fmt(Math.abs(tp));
   pe.className='sval '+(tp>=0?'cg':'cr');
   document.getElementById('stPs').textContent=fmtSub(Math.abs(tp));
-  const aw=Math.round(KOLS.reduce((s,k)=>s+k.winRate,0)/KOLS.length);
+  const aw=KOLS.length?Math.round(KOLS.reduce((s,k)=>s+k.winRate,0)/KOLS.length):0;
   const we=document.getElementById('stWR');
   we.textContent=aw+'%';we.className='sval '+(aw>=75?'cg':aw>=60?'cy':'cr');
   document.getElementById('stT').textContent=tradeCnt;
@@ -621,13 +634,26 @@ function setF(f,el){cFilter=f;document.querySelectorAll('.chip').forEach(c=>c.cl
 function sb(k){if(sKey===k)sDir*=-1;else{sKey=k;sDir=1;}renderW();}
 function renderW(){
   let data=[...KOLS];
+  const byPnl=[...KOLS].sort((a,b)=>(b.pnl-a.pnl)||(b.winRate-a.winRate));
+  const byWr=[...KOLS].sort((a,b)=>(b.winRate-a.winRate)||(b.pnl-a.pnl));
+  const rankPnlMap=new Map(byPnl.map((k,i)=>[k.id,i+1]));
+  const rankWrMap=new Map(byWr.map((k,i)=>[k.id,i+1]));
+  data=data.map(k=>({
+    ...k,
+    rankPnl:k.rankPnl||rankPnlMap.get(k.id)||999,
+    rankWinRate:k.rankWinRate||rankWrMap.get(k.id)||999
+  }));
   const q=(document.getElementById('srch').value||'').toLowerCase();
   if(q)data=data.filter(k=>k.name.toLowerCase().includes(q)||k.handle.toLowerCase().includes(q)||k.wallet.toLowerCase().includes(q));
-  if(cFilter==='top')data=data.slice(0,10);
+  if(cFilter==='top')data=data.filter(k=>k.rankPnl<=10);
   else if(cFilter==='wr80')data=data.filter(k=>k.winRate>=80);
   else if(cFilter==='pnlpos')data=data.filter(k=>k.pnl>0);
   else if(cFilter==='alert')data=data.filter(k=>k.alertOn);
-  data.sort((a,b)=>{let va=a[sKey],vb=b[sKey];return typeof va==='string'?sDir*va.localeCompare(vb):sDir*(va-vb);});
+  data.sort((a,b)=>{
+    const va=a[sKey],vb=b[sKey];
+    if(typeof va==='string')return sDir*va.localeCompare(vb||'');
+    return sDir*((Number(va)||0)-(Number(vb)||0));
+  });
   const tb=document.getElementById('wBody'),em=document.getElementById('emptyW');
   if(!data.length){
     tb.innerHTML='';
@@ -643,7 +669,8 @@ function renderW(){
     const wr=k.winRate,wrc=wr>=80?'var(--green)':wr>=65?'var(--yellow)':'var(--red)';
     const ph=k.pnl>=0?`<span class="pv">+${fmt(k.pnl)}</span>`:`<span class="pnv">-${fmt(Math.abs(k.pnl))}</span>`;
     return`<tr onclick="openKol(${k.id})">
-      <td style="color:var(--muted2);font-size:11px">#${k.rank}</td>
+      <td style="color:var(--muted2);font-size:11px">#${k.rankPnl}</td>
+      <td style="color:var(--muted2);font-size:11px">#${k.rankWinRate}</td>
       <td><div class="kn">${k.name}</div><div class="kh">${k.handle}</div></td>
       <td><div class="wpill" onclick="event.stopPropagation();cp('${k.full}',this)">${k.wallet}<button class="cpbtn2">⎘</button></div></td>
       <td><span class="cbadge c${k.chain.toLowerCase()}">${k.chain}</span></td>
@@ -943,6 +970,28 @@ function showToast(msg){
   toastTimer=setTimeout(()=>toast.classList.remove('show'),1400);
 }
 
+function getCustomAIPrompt(){
+  return (localStorage.getItem(AI_PROMPT_STORAGE_KEY) || '').trim();
+}
+function saveAIPrompt(){
+  const input=document.getElementById('aiPrompt');
+  if(!input)return;
+  const value=(input.value||'').trim();
+  localStorage.setItem(AI_PROMPT_STORAGE_KEY,value);
+  showToast(value?'Prompt IA salvo':'Prompt IA vazio');
+}
+function resetAIPrompt(){
+  localStorage.removeItem(AI_PROMPT_STORAGE_KEY);
+  const input=document.getElementById('aiPrompt');
+  if(input)input.value='';
+  showToast('Prompt IA resetado');
+}
+function loadAIPrompt(){
+  const input=document.getElementById('aiPrompt');
+  if(!input)return;
+  input.value=getCustomAIPrompt();
+}
+
 // ═══════════════════════════════════════════
 // PnL POR PERÍODO - Sistema Otimizado
 // ═══════════════════════════════════════════
@@ -976,7 +1025,7 @@ async function loadKolsWithPnL(period = 'daily') {
         data.kols.forEach(k => {
           KOLS.push({ ...k, alertOn: alertOnMap[k.full] ?? k.alertOn });
         });
-        console.log(`[PnL] Atualizado para período: ${currentPeriod}, rank por PnL`);
+        console.log(`[PnL] Atualizado para período: ${currentPeriod}, rank por PnL e Win Rate`);
       }
     }
   } catch(e) { console.warn('[PnL] Erro ao carregar:', e.message); }
@@ -1085,6 +1134,7 @@ updTime(); setInterval(updTime, 30000);
   
   const searchInput=document.getElementById('srch');
   if(searchInput && typeof searchInput.value!=='string')searchInput.value='';
+  loadAIPrompt();
 
   renderTicker(); renderW(); renderStats(); renderA(); updateAlertBadge();
   connectWS();

@@ -6,35 +6,41 @@ const axios = require('axios');
 const analysisCache = new Map();
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min por CA
 
-function getCachedAnalysis(ca) {
-  const entry = analysisCache.get(ca);
+function buildCacheKey(ca, tradeType, customPrompt) {
+  const promptKey = (customPrompt || '').trim().slice(0, 300);
+  return `${ca}::${tradeType || 'buy'}::${promptKey}`;
+}
+
+function getCachedAnalysis(cacheKey) {
+  const entry = analysisCache.get(cacheKey);
   if (!entry) return null;
   if (Date.now() - entry.ts > CACHE_TTL_MS) {
-    analysisCache.delete(ca);
+    analysisCache.delete(cacheKey);
     return null;
   }
   return entry.data;
 }
 
-function setCachedAnalysis(ca, data) {
-  analysisCache.set(ca, { data, ts: Date.now() });
+function setCachedAnalysis(cacheKey, data) {
+  analysisCache.set(cacheKey, { data, ts: Date.now() });
 }
 
 /**
  * Análise de token via GPT-4o-mini - disponível quando usuário solicitar
  * Retorna JSON: { veredito, confianca, resumo, pontos_positivos, riscos }
  */
-async function analyzeToken(tokenData, kol, tradeType) {
+async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
   const ca = tokenData.ca || tokenData.mint;
   if (!ca) return null;
 
-  const cached = getCachedAnalysis(ca);
+  const cacheKey = buildCacheKey(ca, tradeType, customPrompt);
+  const cached = getCachedAnalysis(cacheKey);
   if (cached) return cached;
 
-  const prompt = `Você é um analista de crypto especialista em memecoins e tokens DeFi na blockchain Solana.
+  const basePrompt = `Você é um analista de crypto especialista em memecoins e tokens DeFi na blockchain Solana.
 Analise o token abaixo de forma objetiva e direta para traders brasileiros.
 Considere: market cap, liquidez, ratio compras/vendas, holders, ownership renunciado e liquidez travada.
 Avalie também o histórico do KOL que operou (win rate, ranking).
@@ -46,6 +52,13 @@ Retorne APENAS um JSON válido no formato (sem markdown, sem \`\`\`):
   "pontos_positivos": ["...", "..."],
   "riscos": ["...", "..."]
 }`;
+  const userPrompt = (customPrompt || '').trim();
+  const prompt = userPrompt
+    ? `${basePrompt}
+
+Instruções personalizadas do usuário (aplique sem quebrar o formato JSON da resposta):
+${userPrompt}`
+    : basePrompt;
 
   const tokenInfo = `
 Token: ${tokenData.name || '?'} (${tokenData.symbol || '?'})
@@ -98,7 +111,7 @@ Operação: ${tradeType === 'buy' ? 'COMPRA' : 'VENDA'}
       riscos: Array.isArray(parsed.riscos) ? parsed.riscos : [],
     };
 
-    setCachedAnalysis(ca, result);
+    setCachedAnalysis(cacheKey, result);
     return result;
   } catch (e) {
     console.warn('[openai] Erro na análise:', e.message);

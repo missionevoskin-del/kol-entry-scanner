@@ -16,6 +16,53 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+function rankKolsForPeriod(period = 'daily') {
+  const periodName = ['daily', 'weekly', 'monthly'].includes(period) ? period : 'daily';
+  const kols = getKols().map((k) => {
+    const periodMetrics = k.metrics?.[periodName];
+    const fallback = k._pnlPeriod === periodName ? {
+      pnl: k.pnl,
+      winRate: k.winRate,
+      trades: k.trades,
+      volume: k.vol24,
+      updatedAt: k._pnlUpdated,
+    } : null;
+    const m = periodMetrics || fallback || { pnl: 0, winRate: 0, trades: 0, volume: 0, updatedAt: null };
+    return {
+      ...k,
+      pnl: Number(m.pnl || 0),
+      winRate: Number(m.winRate || 0),
+      trades: Number(m.trades || 0),
+      vol24: Number(m.volume || 0),
+      _pnlPeriod: periodName,
+      _pnlUpdated: m.updatedAt || null,
+    };
+  });
+
+  const byPnl = [...kols].sort((a, b) =>
+    (b.pnl - a.pnl) ||
+    (b.winRate - a.winRate) ||
+    a.name.localeCompare(b.name)
+  );
+  const byWinRate = [...kols].sort((a, b) =>
+    (b.winRate - a.winRate) ||
+    (b.pnl - a.pnl) ||
+    a.name.localeCompare(b.name)
+  );
+
+  const rankPnl = new Map(byPnl.map((k, i) => [k.id, i + 1]));
+  const rankWinRate = new Map(byWinRate.map((k, i) => [k.id, i + 1]));
+
+  return kols
+    .map((k) => ({
+      ...k,
+      rank: rankPnl.get(k.id) || 999,
+      rankPnl: rankPnl.get(k.id) || 999,
+      rankWinRate: rankWinRate.get(k.id) || 999,
+    }))
+    .sort((a, b) => a.rankPnl - b.rankPnl);
+}
+
 if (!process.env.VERCEL) {
   app.use(express.static(path.join(__dirname, '..', 'frontend')));
 }
@@ -35,8 +82,7 @@ app.get('/api/kols/pnl', (req, res) => {
     const period = (req.query.period || 'daily').toLowerCase();
     const validPeriods = ['daily', 'weekly', 'monthly'];
     const p = validPeriods.includes(period) ? period : 'daily';
-    recomputeRanksByPnl();
-    const kols = getKols();
+    const kols = rankKolsForPeriod(p);
     res.json({ period: p, count: kols.length, kols, updatedAt: new Date().toISOString() });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -46,9 +92,10 @@ app.get('/api/kols/pnl', (req, res) => {
 app.post('/api/kols/refresh-pnl', async (req, res) => {
   try {
     const period = (req.body.period || 'daily').toLowerCase();
-    const results = await forceRefreshAll(period);
-    recomputeRanksByPnl();
-    res.json({ ok: true, period, updated: results?.length || 0, message: 'PnL atualizado' });
+    const p = ['daily', 'weekly', 'monthly'].includes(period) ? period : 'daily';
+    const results = await forceRefreshAll(p);
+    if (p === 'daily') recomputeRanksByPnl();
+    res.json({ ok: true, period: p, updated: results?.length || 0, message: 'PnL atualizado' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -56,7 +103,7 @@ app.post('/api/kols/refresh-pnl', async (req, res) => {
 
 app.get('/api/kols', (req, res) => {
   try {
-    res.json(getKols());
+    res.json(rankKolsForPeriod('daily'));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -74,9 +121,9 @@ app.get('/api/token/:ca', async (req, res) => {
 
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { token, kol, tradeType } = req.body;
+    const { token, kol, tradeType, customPrompt } = req.body;
     if (!token?.ca || !kol) return res.status(400).json({ error: 'token e kol obrigatórios' });
-    const result = await analyzeToken(token, kol, tradeType || 'buy');
+    const result = await analyzeToken(token, kol, tradeType || 'buy', customPrompt || '');
     res.json(result || { veredito: 'NEUTRO', confianca: 0, resumo: 'Análise indisponível' });
   } catch (e) {
     res.status(500).json({ error: e.message });

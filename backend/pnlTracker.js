@@ -102,7 +102,7 @@ async function pollKolGroup(kols, groupName, period = 'daily') {
   recomputeRanksByPnl();
   if (onUpdateCallback && results.length > 0) {
     const allKols = getKols();
-    onUpdateCallback(allKols, groupName);
+    onUpdateCallback(allKols, groupName, period);
   }
 
   return results;
