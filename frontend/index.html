@@ -42,6 +42,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .cfg-btn{padding:6px 12px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:transparent;border:1px solid var(--border2);color:var(--muted2);cursor:pointer;transition:all .15s;}
 .cfg-btn:hover{border-color:var(--yellow);color:var(--yellow);}
 
+/* ── BANNER SETUP ── */
+.banner-setup{background:linear-gradient(90deg,rgba(255,204,0,.15),rgba(255,204,0,.06));border-bottom:1px solid rgba(255,204,0,.35);padding:10px 16px;}
+.banner-inner{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:3px;}
+.banner-inner span{font-family:var(--sans);font-size:13px;color:var(--yellow);}
+.banner-inner small{font-family:var(--mono);font-size:10px;color:var(--muted2);}
+.key-security-note{font-size:11px;color:var(--muted2);margin-top:4px;}
+.loading-cell{opacity:0.5;}
+.spinner-inline{display:inline-block;width:10px;height:10px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:4px;}
+
 /* ── TICKER ── */
 .ticker{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 0;overflow:hidden;display:flex;align-items:center;margin-bottom:16px;}
 .tlbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent);padding:0 11px;flex-shrink:0;border-right:1px solid var(--border);margin-right:10px;}
@@ -156,6 +165,8 @@ td{padding:9px 11px;white-space:nowrap;}
 .tpsub{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;}
 .tpempty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:280px;color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;text-align:center;gap:8px;}
 .tpempty .ei{font-size:28px;opacity:.2;}
+.tpempty.detail-empty h3{font-family:var(--display);font-size:14px;letter-spacing:.06em;color:var(--accent);margin-bottom:6px;}
+.tpempty.detail-empty p,.tpempty.detail-empty small{font-size:10px;color:var(--muted2);}
 .tptokhead{padding:13px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
 .tplogo{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;border:2px solid var(--border2);overflow:hidden;}
 .tplogo img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
@@ -274,6 +285,14 @@ td{padding:9px 11px;white-space:nowrap;}
 <div class="glc"></div><div class="glr"></div>
 <div class="wrap">
 
+<!-- BANNER SETUP (mostrar quando Helius não configurado) -->
+<div id="banner-setup" class="banner-setup" style="display:none">
+  <div class="banner-inner">
+    <span>⚙️ Configure sua <strong>HELIUS_API_KEY</strong> no Railway para monitorar trades em tempo real.</span>
+    <small>Sem a key, as wallets são exibidas mas os trades não são monitorados.</small>
+  </div>
+</div>
+
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="logo">
@@ -307,7 +326,7 @@ td{padding:9px 11px;white-space:nowrap;}
 <div class="tabs">
   <button class="tab active" onclick="sw('wallets',this)">📊 KOL Wallets</button>
   <button class="tab" onclick="sw('trades',this)">⚡ Trades Ao Vivo <span class="tbadge" id="tBadge">0</span></button>
-  <button class="tab" onclick="sw('alerts',this)">🔔 Alertas <span id="aBadge" style="display:none;background:var(--red);color:#fff;border-radius:2px;font-size:9px;padding:1px 5px;animation:bl 1.1s infinite">!</span></button>
+  <button class="tab" onclick="sw('alerts',this)">🔔 Alertas <span id="aBadge" style="display:none;background:var(--red);color:#fff;border-radius:2px;font-size:9px;padding:1px 5px;font-weight:700">0</span></button>
 </div>
 
 <!-- ═══ WALLETS ═══ -->
@@ -352,7 +371,7 @@ td{padding:9px 11px;white-space:nowrap;}
     <!-- TOKEN DETAIL PANEL -->
     <div class="tpanel" id="tokenPanel">
       <div class="tphdr"><div class="tptitle">DETALHE DO TOKEN</div><div class="tpsub">Clique em um trade para ver</div></div>
-      <div id="tokDetail"><div class="tpempty"><div class="ei">🔍</div><p>Selecione um trade</p></div></div>
+      <div id="tokDetail"><div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades ao vivo</h3><p>Quando um KOL comprar ou vender um token, o trade aparecerá no feed à esquerda.</p><p>Clique em qualquer trade para ver:</p><ul style="text-align:left;margin:8px 0;padding-left:18px;font-size:10px;color:var(--muted2)"><li>📊 Market cap, liquidez e volume</li><li>📈 Ratio compras/vendas 24h</li><li>🔗 Links: Solscan, DexScreener, Rugcheck</li><li>🤖 Análise IA com botão ANALISAR</li></ul><small>Configure HELIUS_API_KEY no Railway para receber trades em tempo real.</small></div></div>
     </div>
   </div>
 </div>
@@ -424,7 +443,7 @@ const WS_URL = IS_PRODUCTION
 // ═══════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════
-const USD_BRL = 5.12;
+let USD_BRL = 5.12;
 let cur = 'BRL';
 let cFilter = 'all', sKey = 'rankPnl', sDir = 1;
 let alerts = [], trades = [];
@@ -464,6 +483,15 @@ function setCur(c){
   renderW();renderStats();renderTicker();
 }
 function updTime(){document.getElementById('brlTime').textContent=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+
+async function fetchBRLRate(){
+  try{
+    const res=await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
+    const data=await res.json();
+    const rate=parseFloat(data?.USDBRL?.bid||data?.USDBRL?.ask);
+    if(rate && !isNaN(rate)){USD_BRL=rate;document.getElementById('brlVal').textContent='R$ '+rate.toFixed(2).replace('.',',');renderW();renderStats();renderTicker();}
+  }catch(e){document.getElementById('brlVal').textContent='R$ —';}
+}
 
 // ═══════════════════════════════════════════
 // WEBSOCKET — conexão com backend
@@ -667,15 +695,16 @@ function renderW(){
   em.setAttribute('aria-hidden','true');
   tb.innerHTML=data.map(k=>{
     const wr=k.winRate,wrc=wr>=80?'var(--green)':wr>=65?'var(--yellow)':'var(--red)';
-    const ph=k.pnl>=0?`<span class="pv">+${fmt(k.pnl)}</span>`:`<span class="pnv">-${fmt(Math.abs(k.pnl))}</span>`;
+    const pnlCell=k.pnl===undefined&&k._pnlUpdated===undefined?'<span class="spinner-inline"></span>—':(k.pnl>=0?`<span class="pv">+${fmt(k.pnl)}</span>`:`<span class="pnv">-${fmt(Math.abs(k.pnl))}</span>`);
+    const wrCell=k.winRate===undefined&&k._pnlUpdated===undefined?'<span class="spinner-inline"></span>—':`<span style="color:${wr>=80?'var(--green)':wr>=65?'var(--yellow)':'var(--red)'}">${wr}%</span>`;
     return`<tr onclick="openKol(${k.id})">
       <td style="color:var(--muted2);font-size:11px">#${k.rankPnl}</td>
       <td style="color:var(--muted2);font-size:11px">#${k.rankWinRate}</td>
       <td><div class="kn">${k.name}</div><div class="kh">${k.handle}</div></td>
       <td><div class="wpill" onclick="event.stopPropagation();cp('${k.full}',this)">${k.wallet}<button class="cpbtn2">⎘</button></div></td>
       <td><span class="cbadge c${k.chain.toLowerCase()}">${k.chain}</span></td>
-      <td>${ph}<div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${fmtSub(Math.abs(k.pnl))}</div></td>
-      <td><div class="wrw"><div class="wrbar"><div class="wrfill" style="width:${wr}%;background:${wrc}"></div></div><span style="color:${wrc}">${wr}%</span></div></td>
+      <td>${pnlCell}<div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${fmtSub(Math.abs(k.pnl||0))}</div></td>
+      <td><div class="wrw"><div class="wrbar"><div class="wrfill" style="width:${(wr||0)}%;background:${wrc}"></div></div>${wrCell}</div></td>
       <td style="color:var(--muted2)">${k.trades}</td>
       <td style="color:var(--accent)">${fmt(k.vol24)}</td>
       <td onclick="event.stopPropagation()"><div class="ai"><span class="adot ${k.alertOn?'aon':'aoff'}"></span><span style="color:${k.alertOn?'var(--green)':'var(--muted)'}">${k.alertOn?'ON':'OFF'}</span></div></td>
@@ -735,7 +764,7 @@ function appendTRow(tok,prepend=true){
   if(prepend)tbody.insertBefore(div,tbody.firstChild);
   else tbody.appendChild(div);
 }
-function clearTrades(){allTrades=[];document.getElementById('tBody').innerHTML='';document.getElementById('tEmpty').style.display='block';document.getElementById('tokDetail').innerHTML='<div class="tpempty"><div class="ei">🔍</div><p>Selecione um trade</p></div>';}
+function clearTrades(){allTrades=[];document.getElementById('tBody').innerHTML='';document.getElementById('tEmpty').style.display='block';document.getElementById('tokDetail').innerHTML='<div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades ao vivo</h3><p>Quando um KOL comprar ou vender um token, o trade aparecerá no feed à esquerda.</p><p>Clique em qualquer trade para ver detalhes.</p><small>Configure HELIUS_API_KEY no Railway para receber trades em tempo real.</small></div>';}
 
 // ═══════════════════════════════════════════
 // TOKEN DETAIL + AI
@@ -880,6 +909,7 @@ function updateAlertBadge(){
   const activeTracked=KOLS.filter(k=>k.alertOn).length;
   const shouldShow=activeTracked>0 && unreadAlerts>0;
   badge.style.display=shouldShow?'inline':'none';
+  badge.textContent=unreadAlerts>9?'9+':unreadAlerts;
 }
 function beep(type){try{if(document.getElementById('cfgN').value!=='sound')return;const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=type==='buy'?900:type==='sell'?440:660;o.type='sine';g.gain.setValueAtTime(.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.35);o.start();o.stop(c.currentTime+.35);}catch(e){}}
 
@@ -1074,11 +1104,23 @@ async function forceRefreshPnL() {
 // INIT
 // ═══════════════════════════════════════════
 updTime(); setInterval(updTime, 30000);
+fetchBRLRate(); setInterval(fetchBRLRate, 5*60*1000);
 
 (async function init(){
   console.log('[init] Iniciando... IS_PRODUCTION:', IS_PRODUCTION);
   console.log('[init] API_BASE:', API_BASE || '(mesmo domínio)');
   console.log('[init] WS_URL:', WS_URL);
+  
+  // Verificar status da API (Helius configurado?)
+  let apiStatus = { helius: false, openai: false, kols: 0 };
+  try {
+    const statusRes = await fetch(`${API_BASE}/api/status`);
+    if(statusRes.ok) apiStatus = await statusRes.json();
+  } catch(e) { console.warn('[init] Erro ao buscar /api/status:', e.message); }
+  
+  if(!apiStatus.helius) {
+    document.getElementById('banner-setup').style.display = 'block';
+  }
   
   // Carregar KOLs
   let loaded = false;
@@ -1139,7 +1181,12 @@ updTime(); setInterval(updTime, 30000);
   renderTicker(); renderW(); renderStats(); renderA(); updateAlertBadge();
   connectWS();
   setTimeout(()=>{ 
-    if(!wsConnected) document.getElementById('liveLabel').textContent = loaded ? (IS_PRODUCTION ? 'API ATIVA' : 'DEMO') : 'ERRO API'; 
+    const liveEl = document.getElementById('liveLabel');
+    if(!wsConnected) {
+      if(!loaded) liveEl.textContent = 'ERRO API';
+      else if(!apiStatus.helius) liveEl.textContent = '⚠️ API KEY NECESSÁRIA';
+      else liveEl.textContent = IS_PRODUCTION ? 'API ATIVA' : 'DEMO';
+    }
   }, 4000);
 })();
 </script>

@@ -32,7 +32,7 @@ wsServer.on('connection', (ws) => {
   ws.on('error', (err) => { console.warn('[ws] Erro:', err.message); clients.delete(ws); });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] HTTP + WebSocket em http://localhost:${PORT}`);
   console.log(`[server] WebSocket path: /ws`);
 });
