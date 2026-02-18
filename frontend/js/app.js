@@ -129,7 +129,7 @@ function addTrade(tok) {
 
 function renderTradesFiltered() {
   const tf = $('ttFil')?.value || 'all';
-  const result = renderTradesList($('tBody'), state.allTrades, tf, opts());
+  const result = renderTradesList($('tBody'), state.allTrades, tf, opts(), state.allTrades);
   $('tEmpty').style.display = result.total ? 'none' : 'block';
 }
 

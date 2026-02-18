@@ -40,15 +40,34 @@ async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
   const cached = getCachedAnalysis(cacheKey);
   if (cached) return cached;
 
-  const basePrompt = `Você é um analista de crypto especialista em memecoins e tokens DeFi na blockchain Solana.
-Analise o token abaixo de forma objetiva e direta para traders brasileiros.
-Considere: market cap, liquidez, ratio compras/vendas, holders, ownership renunciado e liquidez travada.
-Avalie também o histórico do KOL que operou (win rate, ranking).
-Retorne APENAS um JSON válido no formato (sem markdown, sem \`\`\`):
+  const basePrompt = `Você é um analista sênior de criptoativos, especializado em memecoins e tokens emergentes na Solana. Sua análise é usada por traders brasileiros para decisões rápidas.
+
+## CONTEXTO DO ECOSSISTEMA SOLANA (2024-2025)
+- Solana é o principal ecossistema de memecoins, com alta velocidade e custos baixos.
+- Tokens nascem em: pump.fun (bonding curve), Raydium, Meteora, Orca. Migration para DEX = milestone.
+- Padrões atuais: narrativas virais (AI, Político, Pets, Culture), comunidade ativa, holder concentration.
+- Riscos comuns: rug pull (LP removida), honeypot, bot sniping, taxas abusivas (>10%), dev não renunciado.
+
+## CRITÉRIOS DE ANÁLISE (priorize nesta ordem)
+1. **Liquidez vs Market Cap**: Liquidez/MC > 5% é saudável. Abaixo de 2% = alto risco de slippage e rug.
+2. **Ownership & Renúncia**: Dev renunciou? LP travada? Metadados imutáveis? Quanto % nos top holders?
+3. **Taxas**: Compra/venda > 5% cada = bandeira vermelha. 0-3% = aceitável.
+4. **Volume e Fluxo**: Compras 24h vs Vendas. Ratio > 1.5 pode indicar momentum; < 0.5 pode ser dump.
+5. **KOL que operou**: Win rate > 70% e rank alto são positivos. WR < 50% ou entrada tardia = cautela.
+6. **Idade do token**: Tokens com < 1h de vida = máximo risco. 24h+ com LP estável = mais confiável.
+7. **Narrativa**: Tem story? Comunidade no X/Telegram? Ou é token genérico sem catalisador?
+
+## REGRAS DE SEGURANÇA
+- EVITAR: LP < $5k, MC > $500k com LP < $10k, taxas > 8%, dev não renunciado, honeypot suspeito.
+- NEUTRO: Métricas médias, KOL mediano, pouca informação.
+- COMPRA (com ressalvas): Boas métricas + KOL forte + narrativa clara. Nunca "COMPRA" sem riscos listados.
+
+## FORMATO DA RESPOSTA
+Retorne APENAS um JSON válido (sem markdown, sem \`\`\`):
 {
   "veredito": "COMPRA" | "NEUTRO" | "EVITAR",
   "confianca": 1-10,
-  "resumo": "máximo 3 linhas em português",
+  "resumo": "máximo 3 linhas em português, direto ao ponto",
   "pontos_positivos": ["...", "..."],
   "riscos": ["...", "..."]
 }`;
@@ -60,16 +79,23 @@ Instruções personalizadas do usuário (aplique sem quebrar o formato JSON da r
 ${userPrompt}`
     : basePrompt;
 
+  const mc = tokenData.marketCap ?? tokenData.mc ?? 0;
+  const liq = tokenData.liquidity ?? tokenData.liq ?? 0;
+  const vol = tokenData.volume24h ?? tokenData.vol24h ?? 0;
+  const change24 = tokenData.priceChange24h ?? tokenData.change ?? 0;
+  const change1h = tokenData.priceChange1h ?? 0;
+
   const tokenInfo = `
 Token: ${tokenData.name || '?'} (${tokenData.symbol || '?'})
 Contrato: ${ca}
-Chain: ${kol.chain}
-Market Cap: $${(tokenData.marketCap || 0).toLocaleString()}
-Liquidez: $${(tokenData.liquidity || 0).toLocaleString()}
-Volume 24h: $${(tokenData.volume24h || 0).toLocaleString()}
+Chain: ${kol?.chain || 'SOL'}
+Market Cap: $${Number(mc).toLocaleString()}
+Liquidez: $${Number(liq).toLocaleString()}
+Ratio LP/MC: ${mc > 0 ? ((liq / mc) * 100).toFixed(2) : 0}%
+Volume 24h: $${Number(vol).toLocaleString()}
 Compras 24h: ${tokenData.buys || 0} | Vendas 24h: ${tokenData.sells || 0}
-Variação 1h: ${tokenData.priceChange1h || 0}% | 24h: ${tokenData.priceChange24h || 0}%
-KOL: ${kol.name} (WR: ${kol.winRate}%, Rank #${kol.rank})
+Variação 1h: ${change1h}% | 24h: ${change24}%
+KOL: ${kol?.name || '?'} (WR: ${kol?.winRate ?? 0}%, Rank #${kol?.rank ?? '?'})
 Operação: ${tradeType === 'buy' ? 'COMPRA' : 'VENDA'}
 `;
 
@@ -82,7 +108,7 @@ Operação: ${tradeType === 'buy' ? 'COMPRA' : 'VENDA'}
           { role: 'system', content: prompt },
           { role: 'user', content: tokenInfo },
         ],
-        max_tokens: 400,
+        max_tokens: 500,
         temperature: 0.4,
       },
       {

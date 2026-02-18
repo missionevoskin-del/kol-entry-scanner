@@ -17,16 +17,80 @@ function formatAIBadge(tok) {
 }
 
 /**
+ * Obtém posição e PnL do KOL no token (agregado de todos os trades)
+ * @param {Array} allTrades - todos os trades
+ * @param {object} kol - KOL do trade
+ * @param {string} ca - contract address do token
+ * @returns {object|null} { holding, pnl, isOut } ou null
+ */
+export function getKolPositionForToken(allTrades, kol, ca) {
+  if (!kol || !ca) return null;
+  const kolFull = kol.full || (kol.wallet && String(kol.wallet).length > 25 ? kol.wallet : null);
+  if (!kolFull) return null;
+
+  const kolTrades = allTrades.filter(
+    (t) =>
+      t.ca === ca &&
+      (t.kol?.full === kolFull || (t.kol?.wallet && t.kol.wallet.length > 25 && t.kol.wallet === kolFull))
+  );
+  if (kolTrades.length < 1) return null;
+
+  let totalBuy = 0;
+  let totalSell = 0;
+  let mcAtFirstBuy = 0;
+  let currentMc = 0;
+  for (const t of kolTrades) {
+    const v = t.valUsd ?? t.valor ?? 0;
+    if (t.type === 'buy') {
+      totalBuy += v;
+      if (!mcAtFirstBuy) mcAtFirstBuy = t.mc ?? t.marketCap ?? 0;
+    } else {
+      totalSell += v;
+    }
+    currentMc = t.mc ?? t.marketCap ?? currentMc;
+  }
+
+  if (totalBuy === 0) return null;
+
+  const remainingCost = totalBuy - totalSell;
+  if (remainingCost <= 0) {
+    const realizedApprox = totalSell - totalBuy;
+    return { holding: 0, pnl: realizedApprox, isOut: true };
+  }
+  if (remainingCost > 0) {
+    let pnl = 0;
+    if (mcAtFirstBuy > 0 && currentMc > 0) {
+      const priceMult = currentMc / mcAtFirstBuy;
+      const currentValue = remainingCost * priceMult;
+      pnl = currentValue - remainingCost;
+    }
+    return { holding: remainingCost, pnl, isOut: false };
+  }
+  return null;
+}
+
+/**
  * Renderiza uma linha de trade
  * @param {object} tok
- * @param {object} options - { cur, usdBRL }
+ * @param {object} options - { cur, usdBRL, kolPosition }
  */
 export function renderTradeRow(tok, options = {}) {
-  const { cur, usdBRL } = options;
+  const { cur, usdBRL, kolPosition } = options;
   const now = tok._time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   tok._time = now;
   const vc = tok.type === 'buy' ? 'var(--color-green)' : 'var(--color-red)';
   const aiBadge = formatAIBadge(tok);
+
+  let posHtml = '';
+  if (kolPosition) {
+    const pnlColor = kolPosition.pnl >= 0 ? 'var(--color-green)' : 'var(--color-red)';
+    const pnlSign = kolPosition.pnl >= 0 ? '+' : '';
+    if (kolPosition.isOut) {
+      posHtml = `<div class="tkolpos" title="PnL realizado ao zerar">Zerou · PnL ${pnlSign}${fmt(kolPosition.pnl, cur, usdBRL)}</div>`;
+    } else {
+      posHtml = `<div class="tkolpos" title="Posição atual do KOL">Segura ${fmt(kolPosition.holding, cur, usdBRL)} · PnL <span style="color:${pnlColor}">${pnlSign}${fmt(kolPosition.pnl, cur, usdBRL)}</span></div>`;
+    }
+  }
 
   return `
   <div class="trow ${tok.type}-row" data-action="show-token" role="button" tabindex="0">
@@ -39,17 +103,31 @@ export function renderTradeRow(tok, options = {}) {
     <div style="display:flex;align-items:center"><span class="ttag ${tok.type}-tag">${tok.type === 'buy' ? 'COMPRA' : 'VENDA'}</span></div>
     <div style="display:flex;align-items:center;font-family:var(--mono);font-weight:700;color:${vc}">${fmt(tok.valUsd, cur, usdBRL)}</div>
     <div class="tmc"><div class="mcv">${fmtMC(tok.mc, cur, usdBRL)}</div><div class="mclbl">Market Cap</div></div>
-    <div class="tkol">${tok.kol?.name || '?'}</div>
+    <div class="tkol">
+      <div>${tok.kol?.name || '?'}</div>
+      ${posHtml}
+    </div>
     <div class="tage">${tok.age}</div>
   </div>`;
 }
 
 /**
  * Renderiza lista de trades (com virtualização - máx 60 itens)
+ * @param {HTMLElement} container
+ * @param {Array} trades - trades filtrados
+ * @param {string} filter - 'all' | 'buy' | 'sell'
+ * @param {object} options - { cur, usdBRL }
+ * @param {Array} allTrades - todos os trades (para calcular posição KOL)
  */
-export function renderTradesList(container, trades, filter, options = {}) {
+export function renderTradesList(container, trades, filter, options = {}, allTrades = []) {
   const filtered = filter === 'all' ? trades : trades.filter((t) => t.type === filter);
   const toRender = filtered.slice(0, MAX_TRADES_RENDERED);
-  container.innerHTML = toRender.map((t) => renderTradeRow(t, options)).join('');
+  const opts = { ...options };
+  container.innerHTML = toRender
+    .map((t) => {
+      opts.kolPosition = getKolPositionForToken(allTrades, t.kol, t.ca);
+      return renderTradeRow(t, opts);
+    })
+    .join('');
   return { total: filtered.length, rendered: toRender.length };
 }
