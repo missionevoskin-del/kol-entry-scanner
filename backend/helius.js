@@ -330,4 +330,107 @@ function stop() {
   }
 }
 
-module.exports = { start, stop, getStats };
+/**
+ * Busca últimas transações SWAP de uma wallet (Helius Enhanced Transactions)
+ * Uso: carregar trades recentes no startup para dar confiança ao usuário
+ */
+async function fetchAddressSwaps(walletAddr, limit = 5) {
+  const key = process.env.HELIUS_API_KEY;
+  if (!key) return [];
+  const url = `${HELIUS_API}/v0/addresses/${walletAddr}/transactions?api-key=${key}&type=SWAP&limit=${limit}`;
+  try {
+    const { data } = await axios.get(url, { timeout: 15000 });
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    if (e.response?.status === 429) throw e; // rate limit
+    return [];
+  }
+}
+
+/**
+ * Carrega últimos 5 swaps de cada wallet em background (respeitando rate limit 2 req/s)
+ */
+async function loadRecentTradesForAllWallets(onTrade, existingSignatures = new Set()) {
+  const key = process.env.HELIUS_API_KEY;
+  if (!key) {
+    console.log('[helius] Sem API key — pulando carga de trades recentes');
+    return [];
+  }
+
+  const wallets = getSolanaWallets();
+  if (!wallets.length) return [];
+
+  const RATE_LIMIT_MS = 550; // ~2 req/s
+  const loaded = [];
+
+  console.log('[helius] Carregando até 5 trades recentes por wallet...');
+
+  for (const walletAddr of wallets) {
+    try {
+      const txs = await fetchAddressSwaps(walletAddr, 5);
+      for (const parsed of txs) {
+        const sig = parsed.signature;
+        if (existingSignatures.has(sig)) continue;
+
+        const swap = parseSwapFromTx(parsed, walletAddr);
+        if (!swap) continue;
+
+        const tokenData = await getTokenData(swap.mint);
+        const ts = (parsed.timestamp || 0) * 1000 || Date.now();
+        const tok = {
+          ca: swap.mint,
+          name: tokenData?.name || 'Unknown',
+          symbol: tokenData?.symbol || '?',
+          desc: 'Token',
+          emoji: '●',
+          kol: swap.kol,
+          type: swap.type,
+          valUsd: swap.valUsd,
+          mc: tokenData?.marketCap || 0,
+          liq: tokenData?.liquidity || 0,
+          vol24h: tokenData?.volume24h || 0,
+          buys: tokenData?.buys || 0,
+          sells: tokenData?.sells || 0,
+          change: tokenData?.priceChange24h || 0,
+          imageUrl: tokenData?.logo,
+          dex: swap.dex,
+          signature: swap.signature,
+          age: formatAge(ts),
+          holders: 0,
+          taxB: 0,
+          taxS: 0,
+          renounced: null,
+          liqLocked: null,
+          aiAnalysis: null,
+          _ts: ts,
+          _time: new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        };
+        existingSignatures.add(sig);
+        loaded.push(tok);
+        if (onTrade) onTrade(tok);
+      }
+    } catch (e) {
+      if (e.response?.status === 429) {
+        console.warn('[helius] Rate limit — pausando carga de trades recentes');
+        await new Promise((r) => setTimeout(r, 5000));
+      } else {
+        console.warn('[helius] Erro ao carregar swaps de', walletAddr.slice(0, 8), e.message);
+      }
+    }
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+  }
+
+  console.log('[helius] Trades recentes carregados:', loaded.length);
+  return loaded;
+}
+
+function formatAge(ts) {
+  if (!ts) return '?';
+  const diff = (Date.now() - ts) / 1000;
+  if (diff < 60) return 'Agora';
+  if (diff < 3600) return Math.floor(diff / 60) + 'min';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+  return Math.floor(diff / 86400) + 'd';
+}
+
+module.exports = { start, stop, getStats, loadRecentTradesForAllWallets };

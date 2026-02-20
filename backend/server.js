@@ -5,7 +5,7 @@
 const http = require('http');
 const app = require('./app');
 const { WebSocketServer } = require('ws');
-const { addTrade: persistTrade } = require('./tradesStore');
+const { addTrade: persistTrade, getTrades, loadTrades } = require('./tradesStore');
 const helius = require('./helius');
 const pnlTracker = require('./pnlTracker');
 const { loadCache } = require('./txCache');
@@ -43,6 +43,16 @@ helius.start((trade) => {
   persistTrade(trade);
   broadcast({ type: 'trade', data: trade });
 });
+
+// Carrega últimos 5 trades por wallet em background (confiança ao abrir o site)
+loadTrades();
+const existingSigs = new Set((getTrades() || []).map((t) => t.signature).filter(Boolean));
+setTimeout(() => {
+  helius.loadRecentTradesForAllWallets((trade) => {
+    persistTrade(trade);
+    broadcast({ type: 'trade', data: trade });
+  }, existingSigs);
+}, 3000);
 
 pnlTracker.start((updatedKols, groupName, period) => {
   broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, period: period || 'daily', timestamp: Date.now() } });

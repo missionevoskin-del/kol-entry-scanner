@@ -170,3 +170,17 @@ export async function refreshPnL(period = 'daily') {
   } catch (e) {}
   return false;
 }
+
+/**
+ * Busca últimos trades (persistidos + carregados no startup)
+ */
+export async function fetchRecentTrades(limit = 120) {
+  try {
+    const r = await fetch(`${API_BASE || ''}/api/trades/recent?limit=${limit}`);
+    if (r.ok) {
+      const d = await r.json();
+      return d.trades || [];
+    }
+  } catch (e) {}
+  return [];
+}

@@ -30,9 +30,12 @@ function saveTrades() {
 }
 
 function addTrade(trade) {
+  if (trades.length === 0) loadTrades();
+  const sig = trade.signature;
+  if (sig && trades.some((t) => t.signature === sig)) return;
   const entry = {
     ...trade,
-    _ts: Date.now(),
+    _ts: trade._ts ?? Date.now(),
   };
   trades.unshift(entry);
   if (trades.length > MAX_TRADES) trades.length = MAX_TRADES;
@@ -44,4 +47,9 @@ function getTrades() {
   return trades;
 }
 
-module.exports = { addTrade, getTrades, loadTrades };
+function getRecentTrades(limit = 120) {
+  if (trades.length === 0) loadTrades();
+  return trades.slice(0, limit);
+}
+
+module.exports = { addTrade, getTrades, getRecentTrades, loadTrades };

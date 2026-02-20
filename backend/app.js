@@ -7,6 +7,7 @@ const express = require('express');
 const cors = require('cors');
 const { getKols, recomputeRanksByPnl, addKol, removeKol, getKolByWallet, getSolanaWallets } = require('./wallets');
 const { getTokenData } = require('./dexscreener');
+const { getRecentTrades } = require('./tradesStore');
 const { analyzeToken } = require('./openai');
 const { calculateWalletPnL, updateKolPnL } = require('./pnlCalculator');
 const { getStats: getTrackerStats, forceRefreshAll, getKolsByTier } = require('./pnlTracker');
@@ -69,6 +70,16 @@ if (!process.env.VERCEL) {
 }
 
 app.get('/health', (req, res) => res.json({ ok: true }));
+
+app.get('/api/trades/recent', (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 120, 200);
+    const trades = getRecentTrades(limit);
+    res.json({ trades, count: trades.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.get('/api/status', (req, res) => {
   res.json({

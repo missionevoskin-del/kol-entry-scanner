@@ -10,7 +10,7 @@ import {
   AI_PROMPT_STORAGE_KEY,
 } from './config.js';
 import { fmt, fmtSub, fmtMC } from './utils/format.js';
-import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL, fetchWalletPnL } from './api.js';
+import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL, fetchWalletPnL, fetchRecentTrades } from './api.js';
 import { renderWallets, renderWalletsSkeleton } from './components/wallets.js';
 import { renderTradesList, getKolPositionForToken } from './components/trades.js';
 import { renderAlerts } from './components/alerts.js';
@@ -1097,8 +1097,23 @@ async function init() {
     $('wsDot')?.setAttribute('data-status', 'error');
   }
 
-  if (tEmptyMsg) tEmptyMsg.textContent = 'Aguardando trades dos KOLs...';
+  if (tEmptyMsg) tEmptyMsg.textContent = 'Carregando trades recentes...';
   if (tEmptySub) tEmptySub.textContent = '';
+
+  const recentTrades = await fetchRecentTrades(120);
+  if (recentTrades?.length) {
+    state.allTrades = recentTrades.map((t) => ({
+      ...t,
+      _time: t._time || new Date(t._ts || 0).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    }));
+    state.tradeCnt = state.allTrades.length;
+    $('tBadge').textContent = state.tradeCnt;
+    renderTradesFiltered();
+    $('tEmpty').style.display = 'none';
+    renderStats();
+    updateHeroCompactStats();
+  }
+  if (tEmptyMsg) tEmptyMsg.textContent = recentTrades?.length ? 'Trades recentes carregados · aguardando novos em tempo real' : 'Aguardando trades dos KOLs...';
 
   loadAIPrompt();
   setupNotifToggle();
