@@ -58,41 +58,31 @@
 </div>
 </header>
 
-<!-- HERO -->
-<section class="hero" aria-label="Apresentação">
-  <div class="hero-inner">
-    <div class="hero-badge" id="heroBadge" style="display:none"><span id="heroBadgeWallets">0</span> wallets monitoradas · <span id="heroBadgeTrades">0</span> trades nesta sessão</div>
-    <h2 class="hero-title">Veja o que os maiores traders BR estão comprando AGORA</h2>
-    <p class="hero-sub">
-      22 wallets de KOLs monitoradas em tempo real • PnL em Reais • Análise IA em PT-BR
-    </p>
-    <div class="hero-feats">
-      <div class="hero-feat"><span class="hero-check">✅</span> Entradas em tempo real</div>
-      <div class="hero-feat"><span class="hero-check">✅</span> PnL convertido em R$</div>
-      <div class="hero-feat"><span class="hero-check">✅</span> Win Rate + Volume 24h</div>
-      <div class="hero-feat"><span class="hero-check">✅</span> Alertas instantâneos</div>
-      <div class="hero-feat"><span class="hero-bot">🤖</span> Clique em Analisar → GPT explica em PT-BR</div>
+<!-- HERO COMPACTO -->
+<section class="hero-compact" aria-label="Status">
+  <div class="hero-compact-inner">
+    <div class="hero-compact-title">
+      <span class="hct-label">KOL ENTRY SCANNER</span>
+      <span class="hct-sub">Monitore o smart money Solana em tempo real</span>
     </div>
-    <button type="button" class="hero-btn" id="heroLoadBtn" onclick="recarregarWallets()">
-      🔄 CARREGAR WALLETS AGORA
-    </button>
+    <div class="hero-compact-stats">
+      <div class="hcs-item">
+        <span class="hcs-val" id="heroWallets">22</span>
+        <span class="hcs-lbl">wallets</span>
+      </div>
+      <div class="hcs-sep">·</div>
+      <div class="hcs-item">
+        <span class="hcs-val" id="heroTrades">—</span>
+        <span class="hcs-lbl">trades hoje</span>
+      </div>
+      <div class="hcs-sep">·</div>
+      <div class="hcs-item">
+        <span class="hcs-val" id="heroLastEntry">—</span>
+        <span class="hcs-lbl">última entrada</span>
+      </div>
+    </div>
   </div>
 </section>
-
-<!-- TEASER GPT -->
-<div class="teaser-gpt">
-  <div class="teaser-gpt-inner">
-    <div class="teaser-gpt-h">
-      <span class="teaser-gpt-ico">🤖</span>
-      <h3 class="teaser-gpt-title">GPT Mini Analysis</h3>
-    </div>
-    <p class="teaser-gpt-txt">
-      Abra qualquer entrada → clique no botão <code>"Analisar"</code><br>
-      A IA explica em português simples: narrativa, força do pump, riscos e o que observar.
-    </p>
-    <p class="teaser-gpt-tag">É como ter um analista particular 24h te guiando</p>
-  </div>
-</div>
 
 <main role="main">
 <!-- STATS -->
@@ -114,7 +104,7 @@
   <div class="controls">
     <div class="ig grow"><label>🔍 Buscar KOL / Wallet</label><input type="text" id="srch" placeholder="Nome, @handle ou endereço..." autocomplete="off" aria-label="Buscar KOL ou wallet"></div>
     <div class="ig"><label>Período</label><select id="pFil" onchange="onPeriodChange()"><option value="D">Diário</option><option value="W">Semanal</option><option value="M">Mensal</option></select></div>
-    <button class="btn bg" onclick="forceRefreshPnL()" title="Forçar atualização de PnL">🔄 RECARREGAR WALLETS</button>
+    <button class="btn bg" id="reloadWalletsBtn" onclick="forceRefreshPnL()" title="Forçar atualização de PnL">🔄 RECARREGAR WALLETS</button>
     <button class="btn bg" onclick="openAddWalletModal()" title="Adicionar wallet customizada">➕ ADICIONAR WALLET</button>
   </div>
   <div class="custom-w-count" id="customWCount" style="display:none">0/10 wallets customizadas</div>
@@ -194,20 +184,14 @@
 
 </main>
 <footer class="app-footer">
-  <div class="footer-how">
-    <div class="footer-step"><span class="fs-ico">📊</span> Veja as wallets na tabela</div>
-    <div class="footer-step"><span class="fs-ico">🔍</span> Clique em um trade para detalhes + IA</div>
-    <div class="footer-step"><span class="fs-ico">🔔</span> Ative alertas para ser notificado</div>
-  </div>
-  <div class="footer-cta">
-    <a class="footer-tw" href="https://x.com/WeedzinxD" target="_blank" rel="noopener">Seguir @WeedzinxD no X</a>
-  </div>
   <div class="footer-links">
-    <span>Desenvolvido por <a href="https://webpelotas.netlify.app/" target="_blank" rel="noopener">Web Pelotas</a></span>
+    <span>KOLScan BR</span>
     <span>·</span>
     <a href="https://x.com/WeedzinxD" target="_blank" rel="noopener">@WeedzinxD</a>
     <span>·</span>
-    <span id="lastUpdate">Última atualização: —</span>
+    <a href="https://webpelotas.netlify.app/" target="_blank" rel="noopener">Web Pelotas</a>
+    <span>·</span>
+    <span id="lastUpdate">—</span>
   </div>
 </footer>
 </div><!-- /wrap -->
@@ -238,7 +222,7 @@
     <div class="msub" id="kSub"></div>
     <div class="msec2">🔔 ALERTA DE ENTRY</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <button class="btn bsm" id="kABtn" onclick="togKA()" style="padding:7px 15px;font-size:11px;border:1px solid var(--green);color:var(--green);background:transparent">ATIVAR ALERTA</button>
+      <button class="btn bsm bg kABtn-state" id="kABtn" onclick="togKA()">ATIVAR ALERTA</button>
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Notificar quando esta wallet fizer um trade</span>
     </div>
     <div class="mgrid" id="kStats"></div>

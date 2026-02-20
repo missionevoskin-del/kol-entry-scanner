@@ -26,7 +26,7 @@ function renderWalletCards(container, data, options) {
       <div class="w-card-actions">
         <button type="button" class="share-kol-btn w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>
         ${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}
-        <span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span>
+        <button type="button" class="alert-toggle-btn ${k.alertOn ? 'alert-on' : 'alert-off'}" data-action="toggle-alert" data-id="${k.id}" title="${k.alertOn ? 'Desativar alerta' : 'Ativar alerta'}">${k.alertOn ? '🔔' : '🔕'}</button>
       </div>
     </div>`;
   }).join('');
@@ -63,7 +63,7 @@ export function renderWallets(container, emptyEl, data, options = {}) {
   container.innerHTML = data
     .map((k) => {
       const wr = k.winRate ?? 0;
-      const wrColor = wr >= 80 ? 'var(--color-green)' : wr >= 65 ? 'var(--color-yellow)' : 'var(--color-red)';
+      const wrColor = wr >= 70 ? '#00ff96' : wr < 50 ? '#ff4444' : '#ffd700';
       const pnlLoading = k.pnl === undefined && !k._pnlUpdated && !k._noHistory;
       const pnlNum = k.pnl ?? 0;
       const pnlArrow = !pnlLoading && !k._noHistory ? (pnlNum > 0 ? ' ▲' : pnlNum < 0 ? ' ▼' : '') : '';
@@ -103,7 +103,7 @@ export function renderWallets(container, emptyEl, data, options = {}) {
         </td>
         <td style="color:var(--muted2)">${k.trades ?? '—'}</td>
         <td style="color:var(--accent)">${k.vol24 != null ? fmt(k.vol24, cur, usdBRL) : '—'}</td>
-        <td data-action="no-prop"><div class="w-cell-actions"><button type="button" class="share-kol-btn w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}<span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span><span style="color:${k.alertOn ? 'var(--green)' : 'var(--muted)'}">${k.alertOn ? 'ON' : 'OFF'}</span></div></td>
+        <td data-action="stop"><div class="w-cell-actions"><button type="button" class="share-kol-btn w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}<button type="button" class="alert-toggle-btn ${k.alertOn ? 'alert-on' : 'alert-off'}" data-action="toggle-alert" data-id="${k.id}" title="${k.alertOn ? 'Desativar alerta' : 'Ativar alerta'}" aria-label="${k.alertOn ? 'Desativar alerta' : 'Ativar alerta'}">${k.alertOn ? '🔔' : '🔕'}</button></div></td>
       </tr>`;
     })
     .join('');

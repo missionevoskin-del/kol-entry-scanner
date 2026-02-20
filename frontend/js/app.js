@@ -42,6 +42,8 @@ let state = {
 const ONBOARDING_KEY = 'kolscan_onboarding_seen';
 const CUSTOM_WALLETS_KEY = 'customWallets';
 const MAX_CUSTOM_WALLETS = 10;
+const STORAGE_KEY_ALERTS = 'kolscan_alerts';
+const STORAGE_KEY_ALERTS_INIT = 'kolscan_alerts_initialized';
 const SITE_URL = 'https://kolbr-entry.up.railway.app';
 const opts = () => ({ cur: state.cur, usdBRL: state.usdBRL });
 
@@ -67,30 +69,57 @@ function renderStats() {
   $('stT').textContent = state.tradeCnt;
   $('stA').textContent = kols.filter((k) => k.alertOn).length;
   updateAlertBadge();
-  updateHeroBadge();
+  updateHeroCompactStats();
 }
 
-function updateHeroBadge() {
-  const el = $('heroBadge');
-  const wEl = $('heroBadgeWallets');
-  const tEl = $('heroBadgeTrades');
-  if (!el || !wEl || !tEl) return;
-  const totalWallets = state.KOLS.length;
-  if (totalWallets === 0) {
-    el.style.display = 'none';
-    return;
+function updateHeroCompactStats() {
+  const wEl = $('heroWallets');
+  const tEl = $('heroTrades');
+  const lEl = $('heroLastEntry');
+  if (wEl) wEl.textContent = state.KOLS.length || '—';
+  if (tEl) tEl.textContent = state.tradeCnt > 0 ? state.tradeCnt : '—';
+  if (lEl) {
+    const last = state.allTrades[0];
+    if (last && state.lastWsMsgAt) {
+      const sec = Math.floor((Date.now() - state.lastWsMsgAt) / 1000);
+      if (sec < 60) lEl.textContent = `${sec}s atrás`;
+      else if (sec < 3600) lEl.textContent = `${Math.floor(sec / 60)}min atrás`;
+      else lEl.textContent = `${Math.floor(sec / 3600)}h atrás`;
+    } else {
+      lEl.textContent = '—';
+    }
   }
-  wEl.textContent = totalWallets;
-  tEl.textContent = state.tradeCnt;
-  const wasHidden = el.style.display === 'none' || !el.style.display;
-  el.style.display = 'flex';
-  if (wasHidden) {
-    el.style.opacity = '0';
-    requestAnimationFrame(() => {
-      el.style.transition = 'opacity 0.6s ease';
-      el.style.opacity = '1';
-    });
+}
+
+// ─── ALERTAS (localStorage) ────────────────────────────────────────────
+function initDefaultAlerts(wallets) {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_ALERTS) || '{}');
+  const isFirstVisit = !localStorage.getItem(STORAGE_KEY_ALERTS_INIT);
+  const officialWallets = wallets.filter((w) => !w.custom);
+  officialWallets.forEach((w) => {
+    const addr = w.full || (w.wallet && String(w.wallet).length > 25 ? w.wallet : null);
+    if (!addr) return;
+    if (isFirstVisit) {
+      saved[addr] = true;
+      w.alertOn = true;
+    } else {
+      w.alertOn = saved[addr] ?? false;
+    }
+  });
+  if (isFirstVisit) {
+    localStorage.setItem(STORAGE_KEY_ALERTS, JSON.stringify(saved));
+    localStorage.setItem(STORAGE_KEY_ALERTS_INIT, '1');
   }
+  return { wallets, isFirstVisit };
+}
+
+function persistAlertsToStorage() {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_ALERTS) || '{}');
+  state.KOLS.forEach((k) => {
+    const addr = k.full || (k.wallet && String(k.wallet).length > 25 ? k.wallet : null);
+    if (addr) saved[addr] = !!k.alertOn;
+  });
+  localStorage.setItem(STORAGE_KEY_ALERTS, JSON.stringify(saved));
 }
 
 // ─── CUSTOM WALLETS ────────────────────────────────────────────────────
@@ -366,18 +395,27 @@ function openKol(id) {
   }
   const ab = $('kABtn');
   ab.textContent = k.alertOn ? 'DESATIVAR ALERTA' : 'ATIVAR ALERTA';
-  ab.style.borderColor = k.alertOn ? 'var(--color-red)' : 'var(--color-green)';
-  ab.style.color = k.alertOn ? 'var(--color-red)' : 'var(--color-green)';
+  ab.classList.toggle('bg', !k.alertOn);
+  ab.classList.toggle('br', k.alertOn);
   $('kolOverlay').classList.add('open');
 }
 
 function togKA() {
   if (!state.curKol) return;
   state.curKol.alertOn = !state.curKol.alertOn;
+  if (state.curKol.custom) {
+    const custom = getCustomWallets();
+    const idx = custom.findIndex((c) => c.address === state.curKol.full);
+    if (idx >= 0) {
+      custom[idx] = { ...custom[idx], alertOn: state.curKol.alertOn };
+      saveCustomWallets(custom);
+    }
+  }
+  persistAlertsToStorage();
   const ab = $('kABtn');
   ab.textContent = state.curKol.alertOn ? 'DESATIVAR ALERTA' : 'ATIVAR ALERTA';
-  ab.style.borderColor = state.curKol.alertOn ? 'var(--color-red)' : 'var(--color-green)';
-  ab.style.color = state.curKol.alertOn ? 'var(--color-red)' : 'var(--color-green)';
+  ab.classList.toggle('bg', !state.curKol.alertOn);
+  ab.classList.toggle('br', state.curKol.alertOn);
   if (state.curKol.alertOn) pushAlert('watch', state.curKol.name, 'Monitoramento ativado para esta wallet');
   renderW();
   renderStats();
@@ -516,13 +554,13 @@ function copyToClipboard(addr) {
   navigator.clipboard.writeText(addr).then(() => showToast('Copiado!')).catch(() => showToast('Falha ao copiar'));
 }
 
-function showToast(msg) {
+function showToast(msg, durationMs = 1400) {
   const toast = $('toast');
   if (!toast) return;
   toast.textContent = msg;
   toast.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), durationMs);
 }
 
 function copyFeedback(el) {
@@ -600,6 +638,7 @@ async function loadKolsWithPnL(period = 'daily') {
         if (k.full) alertOnMap[k.full] = k.alertOn;
       });
       state.KOLS = kols.map((k) => ({ ...k, alertOn: alertOnMap[k.full] ?? k.alertOn }));
+      initDefaultAlerts(state.KOLS);
     }
   } catch (e) {
     console.warn('[PnL] Erro:', e.message);
@@ -616,7 +655,7 @@ function onPeriodChange() {
 }
 
 async function forceRefreshPnL() {
-  const btn = event?.target || $('heroLoadBtn');
+  const btn = event?.target || $('reloadWalletsBtn');
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'ATUALIZANDO...';
@@ -632,7 +671,7 @@ async function forceRefreshPnL() {
   }
   if (btn) {
     btn.disabled = false;
-    btn.textContent = btn.id === 'heroLoadBtn' ? '🔄 CARREGAR WALLETS AGORA' : '🔄 RECARREGAR WALLETS';
+    btn.textContent = '🔄 RECARREGAR WALLETS';
     btn.classList.remove('loading');
   }
 }
@@ -733,8 +772,31 @@ function setupEventDelegation() {
       return;
     }
 
+    const toggleAlertEl = e.target.closest('[data-action="toggle-alert"]');
+    if (toggleAlertEl) {
+      e.stopPropagation();
+      const id = toggleAlertEl.dataset.id;
+      const k = state.KOLS.find((kol) => String(kol.id) === id || kol.full === id);
+      if (k) {
+        k.alertOn = !k.alertOn;
+        if (k.custom) {
+          const custom = getCustomWallets();
+          const idx = custom.findIndex((c) => c.address === k.full);
+          if (idx >= 0) {
+            custom[idx] = { ...custom[idx], alertOn: k.alertOn };
+            saveCustomWallets(custom);
+          }
+        }
+        persistAlertsToStorage();
+        renderW();
+        renderStats();
+        updateAlertBadge();
+      }
+      return;
+    }
+
     const openKolEl = e.target.closest('[data-action="open-kol"]');
-    if (openKolEl && !e.target.closest('[data-action="share-kol"]') && !e.target.closest('[data-action="remove-custom-wallet"]')) {
+    if (openKolEl && !e.target.closest('[data-action="share-kol"]') && !e.target.closest('[data-action="remove-custom-wallet"]') && !e.target.closest('[data-action="toggle-alert"]')) {
       const id = openKolEl.dataset.id;
       const k = state.KOLS.find((kol) => String(kol.id) === id || kol.full === id);
       if (k) openKol(k.id);
@@ -806,13 +868,13 @@ function updateLastUpdateEl() {
   if (!el) return;
   const ts = state.lastWsMsgAt ?? state.lastFetchAt;
   if (!ts) {
-    el.textContent = 'Última atualização: —';
+    el.textContent = '—';
     el.classList.remove('last-update-stale');
     return;
   }
   const sec = Math.floor((Date.now() - ts) / 1000);
   const min = Math.floor(sec / 60);
-  el.textContent = sec < 60 ? `Última atualização: ${sec}s atrás` : `Última atualização: ${min}min atrás`;
+  el.textContent = sec < 60 ? `${sec}s atrás` : `${min}min atrás`;
   el.classList.toggle('last-update-stale', sec > 300);
 }
 
@@ -840,7 +902,7 @@ async function init() {
   console.log('[init] WS_URL:', WS_URL);
 
   const lastUp = $('lastUpdate');
-  if (lastUp) lastUp.textContent = 'Última atualização: carregando...';
+  if (lastUp) lastUp.textContent = 'carregando...';
 
   const rate = await fetchBRLRate();
   if (rate) {
@@ -874,8 +936,12 @@ async function init() {
   if (!kols?.length) kols = await fetchKols();
   if (kols?.length) {
     state.KOLS = kols;
+    const { isFirstVisit } = initDefaultAlerts(state.KOLS);
     state.lastFetchAt = Date.now();
     console.log('[init]', state.KOLS.length, 'KOLs carregados');
+    if (isFirstVisit) {
+      showToast('🔔 Alertas ativados para todas as 22 wallets — você será notificado a cada trade!', 4000);
+    }
   } else {
     console.warn('[init] Nenhum KOL carregado');
     $('liveLabel').textContent = 'ERRO API';
@@ -899,6 +965,7 @@ async function init() {
   setInterval(() => {
     updateLastUpdateEl();
     updateWsTooltip();
+    updateHeroCompactStats();
   }, 1000);
 
   setTimeout(() => {
