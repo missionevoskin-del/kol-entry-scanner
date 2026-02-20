@@ -40,6 +40,44 @@
 </div>
 </header>
 
+<!-- HERO -->
+<section class="hero" aria-label="Apresentação">
+  <div class="hero-inner">
+    <h2 class="hero-title">KOL Entry Scanner BR 🔥</h2>
+    <p class="hero-sub">
+      22 wallets públicas de Solana do kolscanbr<br>
+      Entradas dos KOLs AO VIVO • PnL em Real • Alertas • GPT Mini
+    </p>
+    <div class="hero-feats">
+      <div class="hero-feat"><span class="hero-check">✅</span> Entradas em tempo real</div>
+      <div class="hero-feat"><span class="hero-check">✅</span> PnL convertido em R$</div>
+      <div class="hero-feat"><span class="hero-check">✅</span> Win Rate + Volume 24h</div>
+      <div class="hero-feat"><span class="hero-check">✅</span> Alertas instantâneos</div>
+      <div class="hero-feat"><span class="hero-check">✅</span> Filtros inteligentes</div>
+      <div class="hero-feat"><span class="hero-bot">🤖</span> Clique em "Analisar" → GPT Mini explica em PT-BR</div>
+    </div>
+    <button type="button" class="hero-btn" onclick="recarregarWallets()">
+      🔄 CARREGAR WALLETS AGORA
+    </button>
+    <p class="hero-footer">Feito pra quem tá começando e quer seguir o smart money de verdade</p>
+  </div>
+</section>
+
+<!-- TEASER GPT -->
+<div class="teaser-gpt">
+  <div class="teaser-gpt-inner">
+    <div class="teaser-gpt-h">
+      <span class="teaser-gpt-ico">🤖</span>
+      <h3 class="teaser-gpt-title">GPT Mini Analysis</h3>
+    </div>
+    <p class="teaser-gpt-txt">
+      Abra qualquer entrada → clique no botão <code>"Analisar"</code><br>
+      A IA explica em português simples: narrativa, força do pump, riscos e o que observar.
+    </p>
+    <p class="teaser-gpt-tag">É como ter um analista particular 24h te guiando</p>
+  </div>
+</div>
+
 <main role="main">
 <!-- STATS -->
 <div class="stats">
@@ -75,7 +113,12 @@
       <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th></tr></thead>
       <tbody id="wBody"></tbody>
     </table>
-    <div id="emptyW" class="empty" style="display:none" hidden aria-live="polite" aria-hidden="true"><div class="ei">⬡</div><p>Nenhuma wallet encontrada</p></div>
+    <div id="emptyW" class="empty empty-wallets" style="display:none" hidden aria-live="polite" aria-hidden="true">
+      <div class="empty-w-icon">📭</div>
+      <h3 class="empty-w-title">Nenhuma wallet encontrada com esses filtros</h3>
+      <p class="empty-w-desc">Tente remover alguns filtros ou clique em RECARREGAR</p>
+      <button type="button" class="empty-w-btn" onclick="limparFiltros()">Ver todas as 22 wallets</button>
+    </div>
   </div>
 </div>
 

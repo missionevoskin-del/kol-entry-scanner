@@ -627,6 +627,18 @@ window.closeKbg = (e) => {
 window.saveAIPrompt = saveAIPrompt;
 window.resetAIPrompt = resetAIPrompt;
 window.forceRefreshPnL = forceRefreshPnL;
+window.recarregarWallets = forceRefreshPnL;
+function limparFiltros() {
+  state.cFilter = 'all';
+  const srch = $('srch');
+  if (srch) srch.value = '';
+  qsa('.chip').forEach((c) => {
+    c.classList.remove('active');
+    if (c.textContent.trim() === 'Todos') c.classList.add('active');
+  });
+  renderW();
+}
+window.limparFiltros = limparFiltros;
 window.clearTrades = () => {
   state.allTrades = [];
   state.tradeCnt = 0;
