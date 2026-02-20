@@ -93,9 +93,13 @@ export function renderTokenDetail(tok, options = {}) {
     <div class="ai-box" id="aiBox">
       <div class="ai-hdr">
         <div class="ai-title">🤖 ANÁLISE GPT-4o mini</div>
-        <button type="button" class="btn by bsm" id="aiBtn">${tok.aiAnalysis ? 'RE-ANALISAR' : 'ANALISAR'}</button>
+        <div class="ai-actions">
+          <button type="button" class="btn by bsm" id="aiBtn">${tok.aiAnalysis ? 'RE-ANALISAR' : 'ANALISAR'}</button>
+          ${tok.aiAnalysis ? `<button type="button" class="btn bsm" id="aiShareBtn" title="Compartilhar no X">𝕏</button><button type="button" class="btn bsm" id="aiCopyBtn" title="Copiar análise">⎘</button>` : ''}
+        </div>
       </div>
       <div class="ai-body" id="aiBody">${formatAIBody(tok.aiAnalysis) || 'Clique em ANALISAR para gerar análise com IA'}</div>
+      ${tok.aiAnalysis ? '<small class="ai-watermark">Análise: kolbr-entry.up.railway.app</small>' : ''}
     </div>`;
 }
 
@@ -108,6 +112,6 @@ export function renderTokenEmpty() {
       <div class="ei" aria-hidden="true">📡</div>
       <h3>Aguardando trades</h3>
       <p>Clique em um trade no feed para ver market cap, liquidez e análise IA.</p>
-      <small>Configure HELIUS_API_KEY no Railway para receber trades em tempo real.</small>
+      <small>Configure sua API Key para receber trades em tempo real.</small>
     </div>`;
 }

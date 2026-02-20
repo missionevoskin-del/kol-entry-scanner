@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#04080c"/><stop offset="0.5" stop-color="#0b141c"/><stop offset="1" stop-color="#1a0a2e"/></linearGradient>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#00d4ff"/><stop offset="1" stop-color="#00ff87"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#b)"/>
+  <path d="M200 450 L500 150 L800 450 H650 L600 350 H350 Z" fill="url(#a)" opacity="0.9"/>
+  <circle cx="950" cy="150" r="40" fill="#ffcc00"/>
+  <text x="600" y="520" font-family="sans-serif" font-size="56" font-weight="700" fill="white" text-anchor="middle">KOL Entry Scanner BR</text>
+  <text x="600" y="570" font-family="sans-serif" font-size="28" fill="#5a7d8f" text-anchor="middle">22 wallets - PnL em Reais - Analise IA PT-BR</text>
+</svg>

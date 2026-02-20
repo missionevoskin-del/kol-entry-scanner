@@ -3,12 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KOL Entry Scanner BR - Trades ao Vivo | KOLScan Brasil</title>
-<meta name="description" content="Acompanhe trades em tempo real de KOLs na Solana. PnL, Win Rate e análise IA com GPT-4o mini. Powered by Helius.">
+<title>KOL Entry Scanner BR — Siga o Smart Money Solana em Tempo Real</title>
+<meta name="description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
 <meta name="keywords" content="KOL, Solana, memecoins, trading, Helius, GPT-4, Brasil">
+<!-- Open Graph -->
+<meta property="og:title" content="KOL Entry Scanner BR — Siga o Smart Money Solana em Tempo Real">
+<meta property="og:description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
+<meta property="og:url" content="https://kolbr-entry.up.railway.app/">
+<meta property="og:image" content="https://kolbr-entry.up.railway.app/images/og-1200x630.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@WeedzinxD">
+<meta name="twitter:title" content="KOL Entry Scanner BR — Siga o Smart Money Solana em Tempo Real">
+<meta name="twitter:description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
+<meta name="twitter:image" content="https://kolbr-entry.up.railway.app/images/og-1200x630.png">
+<meta name="theme-color" content="#04080c">
+<link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+<link rel="apple-touch-icon" href="images/favicon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Bebas+Neue&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/design-tokens.css">
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/components.css">
@@ -20,8 +39,7 @@
 <!-- BANNER SETUP (mostrar quando Helius não configurado) -->
 <div id="banner-setup" class="banner-setup" style="display:none" role="alert">
   <div class="banner-inner">
-    <span>⚙️ Configure <strong>HELIUS_API_KEY</strong> no Railway para trades em tempo real.</span>
-    <small>Sem a key: wallets visíveis, trades não monitorados.</small>
+    <span>⚙️ Configure HELIUS_API_KEY no Railway para monitorar trades em tempo real.</span>
   </div>
 </div>
 
@@ -33,8 +51,8 @@
   </div>
   <div class="trr">
     <div class="brlbox"><div><div class="bl">USD / BRL</div><div class="bv" id="brlVal">R$ 5,12</div></div></div>
-    <div class="ctog"><button id="btnBRL" class="active" onclick="setCur('BRL')">R$ BRL</button><button id="btnUSD" onclick="setCur('USD')">$ USD</button></div>
-    <div class="livebadge" id="wsStatus" aria-live="polite" aria-label="Status da conexão"><div class="dot" id="wsDot"></div><span id="liveLabel">CONECTANDO...</span></div>
+    <div class="ctog"><button id="btnBRL" class="active" onclick="setCur('BRL')">R$</button><button id="btnUSD" onclick="setCur('USD')">$</button></div>
+    <div class="livebadge" id="wsStatus" aria-live="polite" aria-label="Status da conexão"><div class="dot status-dot" id="wsDot" data-status="connecting"></div><span id="liveLabel">CONECTANDO...</span></div>
     <button class="cfg-btn" onclick="openSettingsModal()" title="Configurações" aria-label="Abrir configurações">⚙</button>
   </div>
 </div>
@@ -43,23 +61,21 @@
 <!-- HERO -->
 <section class="hero" aria-label="Apresentação">
   <div class="hero-inner">
-    <h2 class="hero-title">KOL Entry Scanner BR 🔥</h2>
+    <div class="hero-badge" id="heroBadge">Usado por <span id="heroBadgeCount">150+</span> traders brasileiros</div>
+    <h2 class="hero-title">Veja o que os maiores traders BR estão comprando AGORA</h2>
     <p class="hero-sub">
-      22 wallets públicas de Solana do kolscanbr<br>
-      Entradas dos KOLs AO VIVO • PnL em Real • Alertas • GPT Mini
+      22 wallets de KOLs monitoradas em tempo real • PnL em Reais • Análise IA em PT-BR
     </p>
     <div class="hero-feats">
       <div class="hero-feat"><span class="hero-check">✅</span> Entradas em tempo real</div>
       <div class="hero-feat"><span class="hero-check">✅</span> PnL convertido em R$</div>
       <div class="hero-feat"><span class="hero-check">✅</span> Win Rate + Volume 24h</div>
       <div class="hero-feat"><span class="hero-check">✅</span> Alertas instantâneos</div>
-      <div class="hero-feat"><span class="hero-check">✅</span> Filtros inteligentes</div>
-      <div class="hero-feat"><span class="hero-bot">🤖</span> Clique em "Analisar" → GPT Mini explica em PT-BR</div>
+      <div class="hero-feat"><span class="hero-bot">🤖</span> Clique em Analisar → GPT explica em PT-BR</div>
     </div>
-    <button type="button" class="hero-btn" onclick="recarregarWallets()">
+    <button type="button" class="hero-btn" id="heroLoadBtn" onclick="recarregarWallets()">
       🔄 CARREGAR WALLETS AGORA
     </button>
-    <p class="hero-footer">Feito pra quem tá começando e quer seguir o smart money de verdade</p>
   </div>
 </section>
 
@@ -109,10 +125,13 @@
     <button class="chip" onclick="setF('alert',this)">Alerta ON</button>
   </div>
   <div class="twrap">
+    <div class="wallets-table-view">
     <table>
-      <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th></tr></thead>
+      <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')"><span>PnL↕</span><span class="th-tip" title="Lucro ou prejuízo em R$ ou USD" onclick="event.stopPropagation()">?</span></th><th onclick="sb('winRate')"><span>WIN RATE↕</span><span class="th-tip" title="Porcentagem de trades lucrativos" onclick="event.stopPropagation()">?</span></th><th onclick="sb('trades')">TRADES↕</th><th><span>VOL 24H</span><span class="th-tip" title="Volume negociado nas últimas 24h" onclick="event.stopPropagation()">?</span></th><th>ALERTA</th></tr></thead>
       <tbody id="wBody"></tbody>
     </table>
+    </div>
+    <div class="wallets-card-view" id="wCards"></div>
     <div id="emptyW" class="empty empty-wallets" style="display:none" hidden aria-live="polite" aria-hidden="true">
       <div class="empty-w-icon">📭</div>
       <h3 class="empty-w-title">Nenhuma wallet encontrada com esses filtros</h3>
@@ -135,12 +154,13 @@
       </div>
       <div class="thead-t"><div>HORA</div><div>TOKEN</div><div>TIPO</div><div>VALOR</div><div>MARKET CAP</div><div>KOL</div><div>IDADE</div></div>
       <div id="tBody"></div>
-      <div id="tEmpty" class="empty"><div class="ei">📡</div><p>Aguardando trades dos KOLs...</p></div>
+      <div id="tEmpty" class="empty"><div class="ei">📡</div><p id="tEmptyMsg">Aguardando trades dos KOLs...</p><small id="tEmptySub"></small></div>
+<div id="tSkeleton" class="t-skeleton" style="display:none"></div>
     </div>
     <!-- TOKEN DETAIL PANEL -->
     <div class="tpanel" id="tokenPanel">
       <div class="tphdr"><div class="tptitle">DETALHE DO TOKEN</div><div class="tpsub">Clique em um trade para ver</div></div>
-      <div id="tokDetail"><div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades</h3><p>Clique em um trade no feed para ver market cap, liquidez e análise IA.</p><small>Configure HELIUS_API_KEY no Railway para receber trades em tempo real.</small></div></div>
+      <div id="tokDetail"><div class="tpempty detail-empty" id="tokDetailEmpty"><div class="ei">📡</div><h3>Aguardando trades</h3><p>Clique em um trade no feed para ver market cap, liquidez e análise IA.</p><small>Configure sua API Key para receber trades em tempo real.</small></div></div>
     </div>
   </div>
 </div>
@@ -171,11 +191,21 @@
 
 </main>
 <footer class="app-footer">
-  <span>Desenvolvido por <a href="https://webpelotas.netlify.app/" target="_blank" rel="noopener">Web Pelotas</a></span>
-  <span>·</span>
-  <a href="https://x.com/WeedzinxD" target="_blank" rel="noopener">@WeedzinxD</a>
-  <span>·</span>
-  <span id="lastUpdate">Última atualização: —</span>
+  <div class="footer-how">
+    <div class="footer-step"><span class="fs-ico">📊</span> Veja as wallets na tabela</div>
+    <div class="footer-step"><span class="fs-ico">🔍</span> Clique em um trade para detalhes + IA</div>
+    <div class="footer-step"><span class="fs-ico">🔔</span> Ative alertas para ser notificado</div>
+  </div>
+  <div class="footer-cta">
+    <a class="footer-tw" href="https://x.com/WeedzinxD" target="_blank" rel="noopener">Seguir @WeedzinxD no X</a>
+  </div>
+  <div class="footer-links">
+    <span>Desenvolvido por <a href="https://webpelotas.netlify.app/" target="_blank" rel="noopener">Web Pelotas</a></span>
+    <span>·</span>
+    <a href="https://x.com/WeedzinxD" target="_blank" rel="noopener">@WeedzinxD</a>
+    <span>·</span>
+    <span id="lastUpdate">Última atualização: —</span>
+  </div>
 </footer>
 </div><!-- /wrap -->
 
@@ -214,6 +244,19 @@
   </div>
 </div>
 
+
+<!-- ONBOARDING TOOLTIP (1x) -->
+<div id="onboardingOverlay" class="onboarding-overlay" style="display:none" aria-hidden="true">
+  <div class="onboarding-card">
+    <h3>Bem-vindo ao KOLScan BR 🚀</h3>
+    <ol class="onboarding-steps">
+      <li><strong>1.</strong> Veja as wallets dos KOLs na tabela</li>
+      <li><strong>2.</strong> Clique em um trade para ver detalhes + análise IA</li>
+      <li><strong>3.</strong> Ative alertas para ser notificado quando um KOL entrar</li>
+    </ol>
+    <button type="button" class="btn bp" onclick="closeOnboarding()">Entendi!</button>
+  </div>
+</div>
 
 <script type="module" src="js/app.js"></script>
 

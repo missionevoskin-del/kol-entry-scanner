@@ -8,7 +8,6 @@ import {
   BRL_UPDATE_INTERVAL_MS,
   SEARCH_DEBOUNCE_MS,
   AI_PROMPT_STORAGE_KEY,
-  LAST_UPDATE,
 } from './config.js';
 import { fmt, fmtSub, fmtMC } from './utils/format.js';
 import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL } from './api.js';
@@ -36,7 +35,9 @@ let state = {
   pnlLoading: false,
   wsConnected: false,
   searchDebounceTimer: null,
+  lastFetchAt: null,
 };
+const ONBOARDING_KEY = 'kolscan_onboarding_seen';
 const opts = () => ({ cur: state.cur, usdBRL: state.usdBRL });
 
 // ─── DOM REFS (lazy) ─────────────────────────────────────────────────
@@ -196,25 +197,36 @@ function attachAIBtnHandler(tok) {
       aiBody.textContent = 'Erro ao analisar. Tente novamente.';
       return;
     }
-      aiBody.className = 'ai-body ready';
-    if (typeof result === 'object') {
-      aiBody.innerHTML = formatAIBody(result);
-      tok.aiAnalysis = result;
-    } else {
-      const upper = String(result).toUpperCase();
-      let scoreClass = 'neutral',
-        scoreLabel = 'NEUTRO';
-      if (upper.includes('COMPRA') || upper.includes('BUY') || upper.includes('POSITIV')) {
-        scoreClass = 'buy';
-        scoreLabel = '✓ COMPRA';
-      } else if (upper.includes('EVITAR') || upper.includes('AVOID') || upper.includes('SELL') || upper.includes('RUG')) {
-        scoreClass = 'sell';
-        scoreLabel = '✗ EVITAR';
-      }
-      aiBody.innerHTML = `<span class="ai-score ai-score--${scoreClass}">${scoreLabel}</span><br><br>${String(result).replace(/\n/g, '<br>')}`;
-      tok.aiAnalysis = result;
-    }
+    tok.aiAnalysis = result;
+    const kolPosition = getKolPositionForToken(state.allTrades, tok.kol, tok.ca);
+    container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition });
+    attachAIBtnHandler(tok);
+    attachShareCopyHandlers(tok, result);
   };
+}
+
+function attachShareCopyHandlers(tok, analysis) {
+  const shareBtn = $('aiShareBtn');
+  const copyBtn = $('aiCopyBtn');
+  const aiBody = $('aiBody');
+  if (!aiBody) return;
+  const analysisText = typeof analysis === 'object'
+    ? `${analysis.veredito || 'ANÁLISE'}: ${(analysis.resumo || '').slice(0, 200)}...`
+    : aiBody.innerText.slice(0, 200);
+  const shareText = `🚨 ${tok.kol?.name || 'KOL'} entrou em $${tok.symbol || 'TOKEN'} com ${fmt(tok.valUsd, state.cur, state.usdBRL)} — Veja a análise: ${window.location.href} via @WeedzinxD #SolanaBR #CryptoBR`;
+  if (shareBtn) {
+    shareBtn.onclick = () => {
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      showToast('Abrindo X...');
+    };
+  }
+  if (copyBtn) {
+    copyBtn.onclick = () => {
+      const toCopy = aiBody.innerText || analysisText;
+      navigator.clipboard.writeText(toCopy).then(() => showToast('Análise copiada!')).catch(() => showToast('Falha ao copiar'));
+    };
+  }
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────
@@ -389,6 +401,7 @@ async function loadKolsWithPnL(period = 'daily') {
     }
     const kols = await fetchKolsPnL(state.currentPeriod);
     if (kols?.length) {
+      state.lastFetchAt = Date.now();
       const alertOnMap = {};
       state.KOLS.forEach((k) => {
         if (k.full) alertOnMap[k.full] = k.alertOn;
@@ -401,6 +414,7 @@ async function loadKolsWithPnL(period = 'daily') {
   state.pnlLoading = false;
   renderW();
   renderStats();
+  updateLastUpdateEl();
 }
 
 function onPeriodChange() {
@@ -409,10 +423,11 @@ function onPeriodChange() {
 }
 
 async function forceRefreshPnL() {
-  const btn = event?.target;
+  const btn = event?.target || $('heroLoadBtn');
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'ATUALIZANDO...';
+    btn.classList.add('loading');
   }
   try {
     const period = $('pFil')?.value || 'D';
@@ -424,7 +439,8 @@ async function forceRefreshPnL() {
   }
   if (btn) {
     btn.disabled = false;
-    btn.textContent = '🔄 RECARREGAR WALLETS';
+    btn.textContent = btn.id === 'heroLoadBtn' ? '🔄 CARREGAR WALLETS AGORA' : '🔄 RECARREGAR WALLETS';
+    btn.classList.remove('loading');
   }
 }
 
@@ -446,7 +462,9 @@ function connectWS() {
     ws = new WebSocket(WS_URL);
     ws.onopen = () => {
       state.wsConnected = true;
+      state.lastFetchAt = state.lastFetchAt || Date.now();
       $('liveLabel').textContent = 'AO VIVO';
+      $('wsDot')?.setAttribute('data-status', 'connected');
       $('wsDot')?.classList.add('ws-dot');
       $('wsStatus')?.setAttribute('aria-label', 'WebSocket conectado');
     };
@@ -460,6 +478,7 @@ function connectWS() {
     ws.onclose = () => {
       state.wsConnected = false;
       $('liveLabel').textContent = 'RECONECTANDO...';
+      $('wsDot')?.removeAttribute('data-status');
       $('wsDot')?.classList.remove('ws-dot');
       $('wsStatus')?.setAttribute('aria-label', 'WebSocket reconectando');
       setTimeout(connectWS, 3000);
@@ -467,6 +486,7 @@ function connectWS() {
     ws.onerror = () => {
       state.wsConnected = false;
       $('liveLabel').textContent = 'ERRO WS';
+      $('wsDot')?.setAttribute('data-status', 'error');
       $('wsStatus')?.setAttribute('aria-label', 'Erro na conexão WebSocket');
     };
   } catch (e) {
@@ -548,13 +568,42 @@ document.addEventListener('click', (e) => {
 
 // Copy em .tca já tratado pelo handler principal [data-action="copy"]
 
+function updateLastUpdateEl() {
+  const el = $('lastUpdate');
+  if (!el) return;
+  if (state.lastFetchAt) {
+    const sec = Math.floor((Date.now() - state.lastFetchAt) / 1000);
+    el.textContent = sec < 60 ? `Última atualização: ${sec}s atrás` : `Última atualização: há ${Math.floor(sec / 60)} min`;
+  } else {
+    el.textContent = 'Última atualização: —';
+  }
+}
+
+function maybeShowOnboarding() {
+  if (localStorage.getItem(ONBOARDING_KEY)) return;
+  const overlay = $('onboardingOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeOnboarding() {
+  localStorage.setItem(ONBOARDING_KEY, '1');
+  const overlay = $('onboardingOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────
 async function init() {
   console.log('[init] API_BASE:', API_BASE || '(mesmo domínio)');
   console.log('[init] WS_URL:', WS_URL);
 
   const lastUp = $('lastUpdate');
-  if (lastUp) lastUp.textContent = 'Última atualização: ' + LAST_UPDATE;
+  if (lastUp) lastUp.textContent = 'Última atualização: carregando...';
 
   const rate = await fetchBRLRate();
   if (rate) {
@@ -579,31 +628,52 @@ async function init() {
   if (!apiStatus.helius) $('banner-setup').style.display = 'block';
 
   renderWalletsSkeleton($('wBody'), $('emptyW'));
+  const tEmptyMsg = $('tEmptyMsg');
+  const tEmptySub = $('tEmptySub');
+  if (tEmptyMsg) tEmptyMsg.textContent = 'Buscando as 22 wallets dos KOLs... isso leva ~5s';
 
   let kols = await fetchKolsPnL('daily');
   if (!kols?.length) kols = await fetchKols();
   if (kols?.length) {
     state.KOLS = kols;
+    state.lastFetchAt = Date.now();
     console.log('[init]', state.KOLS.length, 'KOLs carregados');
   } else {
     console.warn('[init] Nenhum KOL carregado');
     $('liveLabel').textContent = 'ERRO API';
+    $('wsDot')?.setAttribute('data-status', 'error');
   }
+
+  if (tEmptyMsg) tEmptyMsg.textContent = 'Aguardando trades dos KOLs...';
+  if (tEmptySub) tEmptySub.textContent = '';
 
   loadAIPrompt();
   setupEventDelegation();
+  maybeShowOnboarding();
 
   renderW();
   renderStats();
   renderA();
   updateAlertBadge();
   connectWS();
+  updateLastUpdateEl();
+  setInterval(updateLastUpdateEl, 5000);
 
   setTimeout(() => {
+    const dot = $('wsDot');
     if (!state.wsConnected) {
-      if (!state.KOLS.length) $('liveLabel').textContent = 'ERRO API';
-      else if (!apiStatus.helius) $('liveLabel').textContent = '⚠️ API KEY NECESSÁRIA';
-      else $('liveLabel').textContent = API_BASE ? 'API ATIVA' : 'DEMO';
+      if (!state.KOLS.length) {
+        $('liveLabel').textContent = 'ERRO API';
+        dot?.setAttribute('data-status', 'error');
+      } else       if (!apiStatus.helius) {
+        $('liveLabel').textContent = 'API KEY NECESSÁRIA';
+        dot?.setAttribute('data-status', 'error');
+      } else {
+        $('liveLabel').textContent = API_BASE ? 'API ATIVA' : 'DEMO';
+        dot?.setAttribute('data-status', 'demo');
+      }
+    } else {
+      dot?.setAttribute('data-status', 'connected');
     }
   }, 4000);
 }
@@ -648,6 +718,7 @@ window.clearTrades = () => {
   $('tBadge').textContent = '0';
   renderStats();
 };
+window.closeOnboarding = closeOnboarding;
 window.clearAlerts = () => {
   state.alerts = [];
   state.unreadAlerts = 0;

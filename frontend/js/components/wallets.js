@@ -5,6 +5,26 @@
 import { fmt, fmtSub, fmtMC } from '../utils/format.js';
 
 /**
+ * Renderiza cards para mobile
+ */
+function renderWalletCards(container, data, options) {
+  if (!container) return;
+  const { cur, usdBRL } = options;
+  container.innerHTML = data.map((k) => {
+    const wr = k.winRate ?? 0;
+    const pnlLoading = k.pnl === undefined && !k._pnlUpdated;
+    const pnlClass = pnlLoading ? '' : k.pnl >= 0 ? 'positive' : 'negative';
+    const pnlVal = pnlLoading ? '—' : (k.pnl >= 0 ? '+' : '') + fmt(Math.abs(k.pnl), cur, usdBRL);
+    return `<div class="w-card" data-action="open-kol" data-id="${k.id}" role="button" tabindex="0">
+      <div><span class="w-card-name">${k.name}</span><span class="w-card-rank">#${k.rankPnl}</span></div>
+      <div class="w-card-pnl ${pnlClass}">${pnlVal}</div>
+      <div class="w-card-wr">WR ${wr}% · ${k.trades} trades</div>
+      <div class="w-card-actions"><span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span></div>
+    </div>`;
+  }).join('');
+}
+
+/**
  * Renderiza tabela de KOLs
  * @param {HTMLElement} container - tbody
  * @param {HTMLElement} emptyEl - elemento empty state
@@ -13,8 +33,10 @@ import { fmt, fmtSub, fmtMC } from '../utils/format.js';
  */
 export function renderWallets(container, emptyEl, data, options = {}) {
   const { cur, usdBRL } = options;
+  const cardsEl = document.getElementById('wCards');
   if (!data.length) {
     container.innerHTML = '';
+    if (cardsEl) cardsEl.innerHTML = '';
     if (emptyEl) {
       emptyEl.style.display = 'block';
       emptyEl.hidden = false;
@@ -27,6 +49,8 @@ export function renderWallets(container, emptyEl, data, options = {}) {
     emptyEl.hidden = true;
     emptyEl.setAttribute('aria-hidden', 'true');
   }
+
+  renderWalletCards(cardsEl, data, options);
 
   container.innerHTML = data
     .map((k) => {
