@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KOL Entry Scanner BR — Siga o Smart Money Solana em Tempo Real</title>
+<title>🌿 KOLBR — Siga o Smart Money Solana em Tempo Real</title>
 <meta name="description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
 <meta name="keywords" content="KOL, Solana, memecoins, trading, Helius, GPT-4, Brasil">
 <!-- Open Graph -->
-<meta property="og:title" content="KOL Entry Scanner BR — Siga o Smart Money Solana em Tempo Real">
+<meta property="og:title" content="🌿 KOLBR — Siga o Smart Money Solana em Tempo Real">
 <meta property="og:description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
 <meta property="og:url" content="https://kolbr-entry.up.railway.app/">
 <meta property="og:image" content="https://kolbr-entry.up.railway.app/images/og-1200x630.png">
@@ -18,7 +18,7 @@
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@WeedzinxD">
-<meta name="twitter:title" content="KOL Entry Scanner BR — Siga o Smart Money Solana em Tempo Real">
+<meta name="twitter:title" content="🌿 KOLBR — Siga o Smart Money Solana em Tempo Real">
 <meta name="twitter:description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
 <meta name="twitter:image" content="https://kolbr-entry.up.railway.app/images/og-1200x630.png">
 <meta name="theme-color" content="#04080c">
@@ -46,8 +46,13 @@
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="logo">
-    <div class="lhex">K</div>
-    <div><h1>KOL ENTRY SCANNER</h1><p>KOLScan Brasil — Powered by Helius + GPT-4o mini</p></div>
+    <div class="lhex" aria-label="KOLBR Logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="6" fill="#0f1a12"/>
+      <text x="7" y="19" font-family="'IBM Plex Mono',monospace" font-size="13" font-weight="700" fill="#6abf7b">K</text>
+    </svg>
+  </div>
+    <div><h1>KOLBR</h1><p>KOLBR — Powered by Helius + GPT-4o mini</p></div>
   </div>
   <div class="trr">
     <div class="brlbox"><div><div class="bl">USD / BRL</div><div class="bv" id="brlVal">R$ 5,12</div></div></div>
@@ -62,7 +67,7 @@
 <section class="hero-compact" aria-label="Status">
   <div class="hero-compact-inner">
     <div class="hero-compact-title">
-      <span class="hct-label">KOL ENTRY SCANNER</span>
+      <span class="hct-label">KOLBR</span>
       <span class="hct-sub">Monitore o smart money Solana em tempo real</span>
     </div>
     <div class="hero-compact-stats">
@@ -88,7 +93,11 @@
 <!-- STATS -->
 <div class="stats">
   <div class="stat s1"><div class="slbl">Wallets</div><div class="sval ca" id="stW">0</div></div>
-  <div class="stat s2"><div class="slbl">PnL Total</div><div class="sval" id="stP">—</div><div class="ssub" id="stPs"></div></div>
+  <div class="stat s2">
+    <div class="slbl">PNL TOTAL <span class="pnl-period-badge" id="pnlPeriodBadge">DIÁRIO</span></div>
+    <div class="sval" id="stP">—</div>
+    <div class="ssub" id="stPs">Aguardando dados...</div>
+  </div>
   <div class="stat s3"><div class="slbl">Trades ao Vivo</div><div class="sval cy" id="stT">0</div></div>
   <div class="stat s4"><div class="slbl">Alertas Ativos</div><div class="sval cp" id="stA">0</div></div>
 </div>
@@ -173,7 +182,14 @@
     <div class="cfgpanel">
       <div class="cfghdr">⚙️ NOTIFICAÇÃO</div>
       <div class="cfgbody">
-        <div class="cfgrow"><div class="cfglbl">Tipo</div><select class="iginput" id="cfgN"><option value="visual">Visual</option><option value="sound">Visual + Som</option></select></div>
+        <div class="notif-toggle-row cfgrow">
+        <span class="cfglbl">Notificações</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="cfgNotif" checked>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+        <span class="toggle-label" id="cfgNotifLabel">🔊 Som ativo</span>
+      </div>
         <div class="cfgrow"><button class="btn bg bsm" onclick="openSettingsModal()">⚙️ Prompt IA (ANALISAR)</button></div>
       </div>
     </div>
@@ -185,7 +201,7 @@
 </main>
 <footer class="app-footer">
   <div class="footer-links">
-    <span>KOLScan BR</span>
+    <span>KOLBR 🌿</span>
     <span>·</span>
     <a href="https://x.com/WeedzinxD" target="_blank" rel="noopener">@WeedzinxD</a>
     <span>·</span>
@@ -203,10 +219,14 @@
     <div class="mtitle">CONFIGURAÇÕES</div>
     <div class="msub">Prompt IA usado no botão ANALISAR</div>
     <div class="mrow">
-      <label>Prompt IA Personalizado</label>
-      <textarea id="aiPrompt" rows="5" placeholder="Instruções opcionais (ex: priorize tokens &lt; $100k MC, desconfie de taxas &gt; 5%, dê mais peso ao KOL top 10)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px;outline:none;width:100%;resize:vertical;min-height:80px"></textarea>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:4px">Enviado junto para o GPT-4o mini ao clicar em ANALISAR.</div>
+      <label>Instruções adicionais (opcional)</label>
+      <textarea id="aiPrompt" rows="5" placeholder="Instruções opcionais (ex: priorize tokens &lt; $100k MC, desconfie de taxas &gt; 5%...)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px;outline:none;width:100%;resize:vertical;min-height:80px"></textarea>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:4px">Adicionado ao prompt profissional base. Deixe vazio para usar só o padrão.</div>
     </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button type="button" class="btn bsm" onclick="togglePromptPreview()">👁 Ver prompt base</button>
+    </div>
+    <div id="promptPreview" style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:10px;margin-top:8px;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.5);max-height:200px;overflow-y:auto;white-space:pre-wrap;line-height:1.6"></div>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="btn bp" onclick="saveAIPrompt();closeSettingsModal()">SALVAR</button>
       <button class="btn by" onclick="resetAIPrompt()">RESETAR</button>
@@ -268,7 +288,7 @@
 <!-- ONBOARDING TOOLTIP (1x) -->
 <div id="onboardingOverlay" class="onboarding-overlay" style="display:none" aria-hidden="true">
   <div class="onboarding-card">
-    <h3>Bem-vindo ao KOLScan BR 🚀</h3>
+    <h3>Bem-vindo ao KOLBR 🚀</h3>
     <ol class="onboarding-steps">
       <li><strong>1.</strong> Veja as wallets dos KOLs na tabela</li>
       <li><strong>2.</strong> Clique em um trade para ver detalhes + análise IA</li>

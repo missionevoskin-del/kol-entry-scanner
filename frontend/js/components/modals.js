@@ -52,11 +52,17 @@ export function renderKolLastTrades(kol, allTrades, hasHelius = true) {
 export function renderKolLinks(kol) {
   const walletAddr = kol.full || (kol.wallet && kol.wallet.length > 25 ? kol.wallet : '');
   const twitterHandle = (kol.twitter || kol.handle || '').replace(/^@/, '');
-  return `
-    <a class="mlbtn" href="https://solscan.io/account/${walletAddr}" target="_blank" rel="noopener">🔍 EXPLORER</a>
-    ${twitterHandle ? `<a class="mlbtn" href="https://x.com/${twitterHandle}" target="_blank" rel="noopener">🐦 TWITTER/X</a>` : ''}
-    <button type="button" class="mlbtn" data-action="copy" data-value="${walletAddr}">⎘ COPIAR WALLET</button>
-    <a class="mlbtn" href="https://kolscanbrasil.io/" target="_blank" rel="noopener">📊 KOLSCAN BR</a>
-  `;
+  const links = [
+    { label: 'Solscan', url: `https://solscan.io/account/${walletAddr}`, icon: '🔍' },
+    { label: 'GMGN', url: `https://gmgn.ai/sol/address/${walletAddr}`, icon: '📊' },
+    { label: 'Birdeye', url: `https://birdeye.so/profile/${walletAddr}?chain=solana`, icon: '🦅' },
+  ];
+  if (twitterHandle) links.push({ label: `@${twitterHandle}`, url: `https://x.com/${twitterHandle}`, icon: '𝕏' });
+  links.push({ label: 'Copiar', url: '#', icon: '⎘', copy: walletAddr });
+  return links.map((l) =>
+    l.copy
+      ? `<button type="button" class="mlbtn kmlink" data-action="copy" data-value="${l.copy}">${l.icon} ${l.label}</button>`
+      : `<a class="mlbtn kmlink" href="${l.url}" target="_blank" rel="noopener">${l.icon} ${l.label}</a>`
+  ).join('');
 }
 

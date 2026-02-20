@@ -12,9 +12,16 @@
   --color-border: #152233;
   --color-border-2: #1e3045;
 
+  /* Cores cannabis */
+  --weed-green: #4a7c59;
+  --weed-green-light: #6abf7b;
+  --weed-gold: #c8a84b;
+  --weed-purple: #6b4fa0;
+  --weed-smoke: rgba(74,124,89,0.08);
+
   /* Cores semânticas */
-  --color-accent: #00d4ff;
-  --color-green: #00ff87;
+  --color-accent: var(--weed-green-light);
+  --color-green: #6abf7b;
   --color-red: #ff3b5c;
   --color-yellow: #ffcc00;
   --color-purple: #b06fff;

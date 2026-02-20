@@ -1,6 +1,6 @@
 {
   "name": "KOL Entry Scanner BR",
-  "short_name": "KOLScan BR",
+  "short_name": "KOLBR",
   "description": "Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR.",
   "start_url": "/",
   "display": "standalone",

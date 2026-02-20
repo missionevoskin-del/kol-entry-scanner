@@ -16,14 +16,17 @@ body {
   overflow-x: hidden;
 }
 
+::selection {
+  background: rgba(106,191,123,0.2);
+  color: #e8eaed;
+}
+
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 212, 255, 0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 255, 0.022) 1px, transparent 1px);
-  background-size: 48px 48px;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 10 C30 10 35 15 33 20 C32 17 29 17 29 17 C29 17 32 22 30 25 C29 22 26 22 26 22 C27 24 26 27 24 27 C25 24 24 22 24 22 L24 32 L25 32 L25 34 L23 34 L23 32 L24 32 L24 22 C24 22 23 24 22 27 C20 27 19 24 20 22 C20 22 17 22 17 25 C15 22 18 17 18 17 C18 17 15 17 14 20 C12 15 17 10 17 10 C17 10 19 14 22 14 C24 12 27 10 30 10Z' fill='%234a7c59' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
   pointer-events: none;
   z-index: 0;
 }
@@ -34,7 +37,7 @@ body::before {
   left: -180px;
   width: 480px;
   height: 480px;
-  background: radial-gradient(circle, rgba(0, 212, 255, 0.07) 0%, transparent 70%);
+  background: radial-gradient(ellipse 600px 400px at 20% 0%, rgba(74,124,89,0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -45,7 +48,7 @@ body::before {
   right: -180px;
   width: 550px;
   height: 550px;
-  background: radial-gradient(circle, rgba(0, 255, 135, 0.05) 0%, transparent 70%);
+  background: radial-gradient(ellipse 400px 600px at 80% 100%, rgba(107,79,160,0.05) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }

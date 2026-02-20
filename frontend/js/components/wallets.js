@@ -84,11 +84,14 @@ export function renderWallets(container, emptyEl, data, options = {}) {
       const hasShareData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
       const rowClass = k.rankPnl <= 3 && k.rankPnl !== 999 ? ` rank-${k.rankPnl} tr-top3` : '';
       const rankTop3Class = k.rankPnl <= 3 && k.rankPnl !== 999 ? ' rank-top3' : '';
+      const twitterHandle = (k.twitter || k.handle || '').replace(/^@/, '');
+      const avatarUrl = twitterHandle ? `https://unavatar.io/twitter/${twitterHandle}?fallback=https://unavatar.io/fallback.png` : null;
+      const medal = k.rankPnl === 1 ? '🥇 ' : k.rankPnl === 2 ? '🥈 ' : k.rankPnl === 3 ? '🥉 ' : '';
 
       return `
       <tr class="w-row${rowClass}" data-action="open-kol" data-id="${k.id}" role="button" tabindex="0">
         <td style="color:var(--muted2);font-size:11px">${rankDisplay}</td>
-        <td><div class="kn${rankTop3Class}">${k.name}${k.custom ? ' <span class="badge-custom">👤</span>' : ''}</div><div class="kh">${k.handle || k.twitter || ''}</div></td>
+        <td class="td-kol"><div class="kol-avatar-wrap">${avatarUrl ? `<img class="kol-avatar" src="${avatarUrl}" alt="${k.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}<div class="kol-avatar-placeholder" style="${avatarUrl ? 'display:none' : ''}">${(k.name || '?').charAt(0).toUpperCase()}</div></div><div class="kol-name-wrap"><span class="kol-name kn${rankTop3Class}">${medal}${k.name}${k.custom ? ' <span class="badge-custom">👤</span>' : ''}</span>${twitterHandle ? `<span class="kol-handle">@${twitterHandle}</span>` : ''}</div></td>
         <td>
           <div class="wpill" data-action="copy" data-value="${k.full || (k.wallet && k.wallet.length > 25 ? k.wallet : '')}">
             ${k.wallet}<button class="cpbtn2" aria-label="Copiar wallet">⎘</button>

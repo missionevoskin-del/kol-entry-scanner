@@ -56,16 +56,84 @@ const qsa = (sel) => document.querySelectorAll(sel);
 const fmtF = (v) => fmt(v, state.cur, state.usdBRL);
 const fmtSubF = (v) => fmtSub(v, state.cur, state.usdBRL);
 const fmtMCF = (v) => fmtMC(v, state.cur, state.usdBRL);
+const formatCurrency = (v) => fmt(Math.abs(v || 0), state.cur, state.usdBRL);
+
+// ─── PnL TOTAL STAT ───────────────────────────────────────────────────
+function calcTotalPnL(wallets) {
+  let total = 0;
+  let count = 0;
+  wallets.forEach((w) => {
+    const val = w.pnl;
+    if (typeof val === 'number' && !isNaN(val) && val !== null && val !== undefined) {
+      total += val;
+      count++;
+    }
+  });
+  return { total, count, hasData: count > 0 };
+}
+
+function updatePnLStat(wallets, period) {
+  const periodKey = period === 'daily' ? 'D' : period === 'weekly' ? 'W' : 'M';
+  const { total, count, hasData } = calcTotalPnL(wallets);
+  const el = $('stP');
+  const elSub = $('stPs');
+  const card = el?.closest('.stat');
+  const periodLabel = { D: 'Diário', W: 'Semanal', M: 'Mensal' }[periodKey];
+
+  const badge = $('pnlPeriodBadge');
+  if (badge) badge.textContent = periodLabel?.toUpperCase() || 'DIÁRIO';
+
+  if (!hasData) {
+    if (el) el.textContent = '—';
+    if (el) el.className = 'sval';
+    if (elSub) elSub.textContent = 'Aguardando dados...';
+    if (card) card.classList.remove('pnl-positive', 'pnl-negative');
+    if (card) card.title = '';
+    return;
+  }
+
+  const prevText = el?.textContent || '';
+  const prevTotal = parseFloat(el?.dataset?.rawValue || '0');
+
+  const formatted = formatCurrency(total);
+  if (el) {
+    el.textContent = (total >= 0 ? '▲ ' : '▼ ') + formatted;
+    el.dataset.rawValue = total;
+  }
+  if (elSub) elSub.textContent = `${periodLabel} · ${count} wallets`;
+
+  if (card) card.title = `PnL ${periodLabel}: soma real de ${count} wallets\nPositivo = verde 🌿  Negativo = queimado 🔥`;
+
+  if (el) {
+    if (total > 0) {
+      el.className = 'sval pnl-positive';
+      if (card) { card.classList.add('pnl-positive'); card.classList.remove('pnl-negative'); }
+    } else if (total < 0) {
+      el.className = 'sval pnl-negative';
+      if (card) { card.classList.add('pnl-negative'); card.classList.remove('pnl-positive'); }
+    } else {
+      el.className = 'sval';
+      if (card) card.classList.remove('pnl-positive', 'pnl-negative');
+    }
+  }
+
+  if (prevText !== '—' && total !== prevTotal && card) {
+    flashPnLCard(card, total > prevTotal ? 'up' : 'down');
+  }
+}
+
+function flashPnLCard(card, direction) {
+  const cls = direction === 'up' ? 'flash-pnl-up' : 'flash-pnl-down';
+  card.classList.add(cls);
+  setTimeout(() => card.classList.remove(cls), 800);
+}
 
 // ─── STATS ───────────────────────────────────────────────────────────
 function renderStats() {
   const kols = state.KOLS;
   $('stW').textContent = kols.length;
-  const tp = kols.reduce((s, k) => s + (k.pnl || 0), 0);
-  const pe = $('stP');
-  pe.textContent = (tp >= 0 ? '+' : '') + fmtF(Math.abs(tp));
-  pe.className = 'sval ' + (tp >= 0 ? 'cg' : 'cr');
-  $('stPs').textContent = fmtSubF(Math.abs(tp));
+  const periodKey = state.currentPeriod === 'daily' ? 'D' : state.currentPeriod === 'weekly' ? 'W' : 'M';
+  updatePnLStat(kols, state.currentPeriod);
   $('stT').textContent = state.tradeCnt;
   $('stA').textContent = kols.filter((k) => k.alertOn).length;
   updateAlertBadge();
@@ -109,6 +177,7 @@ function initDefaultAlerts(wallets) {
   if (isFirstVisit) {
     localStorage.setItem(STORAGE_KEY_ALERTS, JSON.stringify(saved));
     localStorage.setItem(STORAGE_KEY_ALERTS_INIT, '1');
+    showToast('🔔 Alertas ativados para todas as 22 wallets!', 'info');
   }
   return { wallets, isFirstVisit };
 }
@@ -282,7 +351,7 @@ function attachAIBtnHandler(tok) {
   runBtn.onclick = async () => {
     if (!_currentTok) return;
     runBtn.disabled = true;
-    runBtn.textContent = 'ANALISANDO...';
+    runBtn.textContent = '⏳ Analisando...';
       aiBody.className = 'ai-body loading';
     aiBody.innerHTML = '<div class="spinner" aria-hidden="true"></div><span>GPT-4o mini analisando o token...</span>';
     const tokenPayload = {
@@ -296,10 +365,10 @@ function attachAIBtnHandler(tok) {
       sells: tok.sells,
       change: tok.change,
     };
-    const customPrompt = getCustomAIPrompt();
+    const customPrompt = getFullAIPrompt();
     const result = await analyzeTokenAI(tokenPayload, tok.kol, tok.type, customPrompt);
     runBtn.disabled = false;
-    runBtn.textContent = 'RE-ANALISAR';
+    runBtn.textContent = '🤖 Analisar';
     if (!result) {
       aiBody.className = 'ai-body';
       aiBody.textContent = 'Erro ao analisar. Tente novamente.';
@@ -344,7 +413,7 @@ function pushAlert(type, name, msg) {
   state.unreadAlerts++;
   renderA();
   updateAlertBadge();
-  beep(type);
+  playAlertSound();
 }
 
 function renderA() {
@@ -359,20 +428,22 @@ function updateAlertBadge() {
   badge.textContent = state.unreadAlerts > 9 ? '9+' : state.unreadAlerts;
 }
 
-function beep(type) {
+function playAlertSound() {
+  const cfgNotif = $('cfgNotif');
+  if (cfgNotif && !cfgNotif.checked) return;
   try {
-    if ($('cfgN')?.value !== 'sound') return;
-    const c = new (window.AudioContext || window.webkitAudioContext)();
-    const o = c.createOscillator();
-    const g = c.createGain();
-    o.connect(g);
-    g.connect(c.destination);
-    o.frequency.value = type === 'buy' ? 900 : type === 'sell' ? 440 : 660;
-    o.type = 'sine';
-    g.gain.setValueAtTime(0.12, c.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
-    o.start();
-    o.stop(c.currentTime + 0.35);
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
   } catch (e) {}
 }
 
@@ -398,6 +469,7 @@ function openKol(id) {
   ab.classList.toggle('bg', !k.alertOn);
   ab.classList.toggle('br', k.alertOn);
   $('kolOverlay').classList.add('open');
+  $('kolOverlay').setAttribute('aria-hidden', 'false');
 }
 
 function togKA() {
@@ -424,6 +496,7 @@ function togKA() {
 
 function closeKol() {
   $('kolOverlay').classList.remove('open');
+  $('kolOverlay')?.setAttribute('aria-hidden', 'true');
 }
 
 function shareKOL(kol) {
@@ -554,9 +627,13 @@ function copyToClipboard(addr) {
   navigator.clipboard.writeText(addr).then(() => showToast('Copiado!')).catch(() => showToast('Falha ao copiar'));
 }
 
-function showToast(msg, durationMs = 1400) {
+function showToast(msg, typeOrDuration = 'info') {
   const toast = $('toast');
   if (!toast) return;
+  const durationMs = typeof typeOrDuration === 'number' ? typeOrDuration : 3500;
+  const type = typeof typeOrDuration === 'string' ? typeOrDuration : 'info';
+  const colors = { info: '#6abf7b', error: '#e05540', warn: '#c8a84b' };
+  toast.style.borderLeft = `3px solid ${colors[type] || colors.info}`;
   toast.textContent = msg;
   toast.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
@@ -586,9 +663,75 @@ function copyFeedback(el) {
   }
 }
 
+// ─── NOTIF TOGGLE ────────────────────────────────────────────────────
+function setupNotifToggle() {
+  const cfgNotif = $('cfgNotif');
+  if (!cfgNotif) return;
+  cfgNotif.checked = localStorage.getItem('kolbr_sound') !== 'false';
+  updateNotifLabel();
+  cfgNotif.addEventListener('change', () => {
+    localStorage.setItem('kolbr_sound', String(cfgNotif.checked));
+    updateNotifLabel();
+  });
+}
+
+function updateNotifLabel() {
+  const cfgNotif = $('cfgNotif');
+  const el = $('cfgNotifLabel');
+  if (!cfgNotif || !el) return;
+  el.textContent = cfgNotif.checked ? '🔊 Som ativo' : '🔇 Mudo';
+  el.style.color = cfgNotif.checked ? 'rgba(106,191,123,0.7)' : 'rgba(255,255,255,0.2)';
+}
+
 // ─── AI PROMPT ───────────────────────────────────────────────────────
-function getCustomAIPrompt() {
+const DEFAULT_AI_PROMPT = `Você é um trader profissional especializado em memecoins de Solana com mais de 3 anos de experiência operando narrativas de mercado cripto. Seu papel é analisar entradas de KOLs brasileiros e fornecer análises rápidas, diretas e acionáveis.
+
+Ao analisar um trade, siga esta estrutura obrigatória:
+
+**1. NARRATIVA DO TOKEN**
+- Qual é o tema/narrativa por trás deste token? (meme, AI, político, animal, cultural)
+- Essa narrativa está em alta, emergindo ou esfriando no mercado atual?
+- Existe um catalisador recente que explica a movimentação?
+
+**2. FORÇA DA ENTRADA**
+- O market cap atual indica early entry ou entrada tardia?
+- O volume e liquidez suportam a movimentação ou é thin?
+- O KOL que entrou tem histórico relevante neste tipo de token?
+
+**3. GESTÃO DE RISCO**
+- Quais são os principais red flags nesta operação?
+- Qual seria um stop loss lógico baseado no market cap?
+- Existe risco de rug, honeypot ou concentração de supply?
+
+**4. CENÁRIOS POSSÍVEIS**
+- Cenário otimista: o que precisaria acontecer para o token multiplicar?
+- Cenário pessimista: quais sinais indicariam saída imediata?
+
+**5. NOTA GERAL**
+- Avaliação de 1 a 10 para esta entrada específica
+- Uma frase de conclusão direta: ENTRAR / OBSERVAR / EVITAR
+
+Responda sempre em português brasileiro. Seja direto, técnico e sem rodeios.
+Não use linguagem de hype. Trate o usuário como trader experiente que quer análise real.`;
+
+function getStoredUserPrompt() {
   return (localStorage.getItem(AI_PROMPT_STORAGE_KEY) || '').trim();
+}
+
+function getFullAIPrompt() {
+  const userPrompt = getStoredUserPrompt();
+  return userPrompt ? DEFAULT_AI_PROMPT + '\n\nInstruções adicionais:\n' + userPrompt : DEFAULT_AI_PROMPT;
+}
+
+function togglePromptPreview() {
+  const el = $('promptPreview');
+  if (!el) return;
+  if (el.style.display === 'none') {
+    el.textContent = DEFAULT_AI_PROMPT;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 function saveAIPrompt() {
@@ -608,7 +751,7 @@ function resetAIPrompt() {
 
 function loadAIPrompt() {
   const input = $('aiPrompt');
-  if (input) input.value = getCustomAIPrompt();
+  if (input) input.value = getStoredUserPrompt();
 }
 
 function openSettingsModal() {
@@ -936,12 +1079,9 @@ async function init() {
   if (!kols?.length) kols = await fetchKols();
   if (kols?.length) {
     state.KOLS = kols;
-    const { isFirstVisit } = initDefaultAlerts(state.KOLS);
+    initDefaultAlerts(state.KOLS);
     state.lastFetchAt = Date.now();
     console.log('[init]', state.KOLS.length, 'KOLs carregados');
-    if (isFirstVisit) {
-      showToast('🔔 Alertas ativados para todas as 22 wallets — você será notificado a cada trade!', 4000);
-    }
   } else {
     console.warn('[init] Nenhum KOL carregado');
     $('liveLabel').textContent = 'ERRO API';
@@ -952,6 +1092,7 @@ async function init() {
   if (tEmptySub) tEmptySub.textContent = '';
 
   loadAIPrompt();
+  setupNotifToggle();
   setupEventDelegation();
   maybeShowOnboarding();
 
@@ -1010,6 +1151,7 @@ window.saveAddWallet = saveAddWallet;
 window.shareKOL = shareKOL;
 window.saveAIPrompt = saveAIPrompt;
 window.resetAIPrompt = resetAIPrompt;
+window.togglePromptPreview = togglePromptPreview;
 window.forceRefreshPnL = forceRefreshPnL;
 window.recarregarWallets = forceRefreshPnL;
 function limparFiltros() {
