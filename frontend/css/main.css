@@ -118,3 +118,11 @@ body::before {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── MOBILE GLOBAL ── */
+@media (max-width: 768px) {
+  .wrap { padding: 0 12px 60px; }
+}
+@media (max-width: 480px) {
+  .wrap { padding: 0 10px 50px; }
+}
