@@ -255,7 +255,6 @@ function getFilteredAndSortedKols() {
   const q = ($('srch')?.value || '').toLowerCase();
   if (q) data = data.filter((k) => (k.name || '').toLowerCase().includes(q) || (k.handle || '').toLowerCase().includes(q) || (k.wallet || '').toLowerCase().includes(q));
   if (state.cFilter === 'top') data = data.filter((k) => k.rankPnl <= 10);
-  else if (state.cFilter === 'wr80') data = data.filter((k) => (k.winRate ?? 0) >= 80);
   else if (state.cFilter === 'pnlpos') data = data.filter((k) => (k.pnl ?? 0) > 0);
   else if (state.cFilter === 'alert') data = data.filter((k) => k.alertOn);
 
