@@ -12,6 +12,7 @@ const { analyzeToken } = require('./openai');
 const { calculateWalletPnL, updateKolPnL } = require('./pnlCalculator');
 const { getStats: getTrackerStats, forceRefreshAll, getKolsByTier } = require('./pnlTracker');
 const { getCacheStats, clearAllCache } = require('./txCache');
+const pnlCache = require('./pnlCache');
 
 const app = express();
 app.use(cors());
@@ -94,8 +95,14 @@ app.get('/api/kols/pnl', (req, res) => {
     const period = (req.query.period || 'daily').toLowerCase();
     const validPeriods = ['daily', 'weekly', 'monthly'];
     const p = validPeriods.includes(period) ? period : 'daily';
+    const cached = pnlCache.get(p);
+    if (cached) {
+      return res.json(cached);
+    }
     const kols = rankKolsForPeriod(p);
-    res.json({ period: p, count: kols.length, kols, updatedAt: new Date().toISOString() });
+    const payload = { period: p, count: kols.length, kols, updatedAt: new Date().toISOString() };
+    pnlCache.set(p, payload);
+    res.json(payload);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -116,6 +123,7 @@ app.post('/api/kols/refresh-pnl', async (req, res) => {
     const p = ['daily', 'weekly', 'monthly'].includes(period) ? period : 'daily';
     const results = await forceRefreshAll(p);
     if (p === 'daily') recomputeRanksByPnl();
+    pnlCache.invalidate(p);
     res.json({ ok: true, period: p, updated: results?.length || 0, message: 'PnL atualizado' });
   } catch (e) {
     res.status(500).json({ error: e.message });

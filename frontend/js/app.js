@@ -44,6 +44,8 @@ const CUSTOM_WALLETS_KEY = 'customWallets';
 const MAX_CUSTOM_WALLETS = 10;
 const STORAGE_KEY_ALERTS = 'kolscan_alerts';
 const STORAGE_KEY_ALERTS_INIT = 'kolscan_alerts_initialized';
+const PNL_CACHE_KEY = 'kolscan_pnl_cache';
+const PNL_CACHE_MAX_AGE_MS = 4 * 60 * 60 * 1000; // 4h para usar como inicial
 const SITE_URL = 'https://kolbr-entry.up.railway.app';
 const opts = () => ({ cur: state.cur, usdBRL: state.usdBRL });
 
@@ -189,6 +191,31 @@ function persistAlertsToStorage() {
     if (addr) saved[addr] = !!k.alertOn;
   });
   localStorage.setItem(STORAGE_KEY_ALERTS, JSON.stringify(saved));
+}
+
+// ─── PnL CACHE (localStorage) ───────────────────────────────────────────
+function getPnlCache(period = 'daily') {
+  try {
+    const raw = localStorage.getItem(PNL_CACHE_KEY);
+    if (!raw) return null;
+    const all = JSON.parse(raw);
+    const entry = all[period];
+    if (!entry?.kols?.length) return null;
+    const age = Date.now() - (entry.cachedAt || 0);
+    if (age > PNL_CACHE_MAX_AGE_MS) return null;
+    return { kols: entry.kols, cachedAt: entry.cachedAt };
+  } catch (e) {
+    return null;
+  }
+}
+
+function savePnlCache(period, kols) {
+  if (!kols?.length) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(PNL_CACHE_KEY) || '{}');
+    all[period] = { kols, cachedAt: Date.now() };
+    localStorage.setItem(PNL_CACHE_KEY, JSON.stringify(all));
+  } catch (e) {}
 }
 
 // ─── CUSTOM WALLETS ────────────────────────────────────────────────────
@@ -818,6 +845,7 @@ async function loadKolsWithPnL(period = 'daily') {
     const kols = await fetchKolsPnL(state.currentPeriod);
     if (kols?.length) {
       state.lastFetchAt = Date.now();
+      savePnlCache(state.currentPeriod, kols);
       const alertOnMap = {};
       state.KOLS.forEach((k) => {
         if (k.full) alertOnMap[k.full] = k.alertOn;
@@ -1126,19 +1154,32 @@ async function init() {
   state.hasHelius = !!apiStatus.helius;
   if (!apiStatus.helius) $('banner-setup').style.display = 'block';
 
-  renderWalletsSkeleton($('wBody'), $('emptyW'));
   const tEmptyMsg = $('tEmptyMsg');
   const tEmptySub = $('tEmptySub');
-  if (tEmptyMsg) tEmptyMsg.textContent = 'Buscando as 22 wallets dos KOLs... isso leva ~5s';
+  const cached = getPnlCache('daily');
+  if (cached?.kols?.length) {
+    state.KOLS = cached.kols;
+    state.lastFetchAt = cached.cachedAt || Date.now();
+    initDefaultAlerts(state.KOLS);
+    renderW();
+    renderStats();
+    if (tEmptyMsg) tEmptyMsg.textContent = 'Atualizando dados...';
+  } else {
+    renderWalletsSkeleton($('wBody'), $('emptyW'));
+    if (tEmptyMsg) tEmptyMsg.textContent = 'Buscando as 22 wallets dos KOLs... isso leva ~5s';
+  }
 
   let kols = await fetchKolsPnL('daily');
   if (!kols?.length) kols = await fetchKols();
   if (kols?.length) {
-    state.KOLS = kols;
+    const alertOnMap = {};
+    state.KOLS.forEach((k) => { if (k.full) alertOnMap[k.full] = k.alertOn; });
+    state.KOLS = kols.map((k) => ({ ...k, alertOn: alertOnMap[k.full] ?? k.alertOn }));
     initDefaultAlerts(state.KOLS);
     state.lastFetchAt = Date.now();
+    savePnlCache('daily', kols);
     console.log('[init]', state.KOLS.length, 'KOLs carregados');
-  } else {
+  } else if (!cached?.kols?.length) {
     console.warn('[init] Nenhum KOL carregado');
     $('liveLabel').textContent = 'ERRO API';
     $('wsDot')?.setAttribute('data-status', 'error');

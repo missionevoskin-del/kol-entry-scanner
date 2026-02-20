@@ -9,6 +9,7 @@ const { addTrade: persistTrade, getTrades, getRecentTrades, loadTrades } = requi
 const helius = require('./helius');
 const pnlTracker = require('./pnlTracker');
 const { loadCache } = require('./txCache');
+const pnlCache = require('./pnlCache');
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -60,6 +61,7 @@ setTimeout(() => {
 }, 3000);
 
 pnlTracker.start((updatedKols, groupName, period) => {
+  pnlCache.invalidate(period || 'daily');
   broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, period: period || 'daily', timestamp: Date.now() } });
   console.log(`[server] PnL atualizado: ${updatedKols.length} KOLs (${groupName}, ${period || 'daily'})`);
 });
