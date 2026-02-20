@@ -52,7 +52,7 @@
   <div class="trr">
     <div class="brlbox"><div><div class="bl">USD / BRL</div><div class="bv" id="brlVal">R$ 5,12</div></div></div>
     <div class="ctog"><button id="btnBRL" class="active" onclick="setCur('BRL')">R$</button><button id="btnUSD" onclick="setCur('USD')">$</button></div>
-    <div class="livebadge" id="wsStatus" aria-live="polite" aria-label="Status da conexão"><div class="dot status-dot" id="wsDot" data-status="connecting"></div><span id="liveLabel">CONECTANDO...</span></div>
+    <div class="livebadge" id="wsStatus" aria-live="polite" aria-label="Status da conexão" title="WebSocket: conectando"><div class="dot status-dot" id="wsDot" data-status="connecting"></div><span id="liveLabel">CONECTANDO...</span></div>
     <button class="cfg-btn" onclick="openSettingsModal()" title="Configurações" aria-label="Abrir configurações">⚙</button>
   </div>
 </div>
@@ -61,7 +61,7 @@
 <!-- HERO -->
 <section class="hero" aria-label="Apresentação">
   <div class="hero-inner">
-    <div class="hero-badge" id="heroBadge">Usado por <span id="heroBadgeCount">150+</span> traders brasileiros</div>
+    <div class="hero-badge" id="heroBadge" style="display:none"><span id="heroBadgeWallets">0</span> wallets monitoradas · <span id="heroBadgeTrades">0</span> trades nesta sessão</div>
     <h2 class="hero-title">Veja o que os maiores traders BR estão comprando AGORA</h2>
     <p class="hero-sub">
       22 wallets de KOLs monitoradas em tempo real • PnL em Reais • Análise IA em PT-BR
@@ -115,7 +115,9 @@
     <div class="ig grow"><label>🔍 Buscar KOL / Wallet</label><input type="text" id="srch" placeholder="Nome, @handle ou endereço..." autocomplete="off" aria-label="Buscar KOL ou wallet"></div>
     <div class="ig"><label>Período</label><select id="pFil" onchange="onPeriodChange()"><option value="D">Diário</option><option value="W">Semanal</option><option value="M">Mensal</option></select></div>
     <button class="btn bg" onclick="forceRefreshPnL()" title="Forçar atualização de PnL">🔄 RECARREGAR WALLETS</button>
+    <button class="btn bg" onclick="openAddWalletModal()" title="Adicionar wallet customizada">➕ ADICIONAR WALLET</button>
   </div>
+  <div class="custom-w-count" id="customWCount" style="display:none">0/10 wallets customizadas</div>
   <div class="frow">
     <span class="flbl">Filtro:</span>
     <button class="chip active" onclick="setF('all',this)">Todos</button>
@@ -123,10 +125,11 @@
     <button class="chip" onclick="setF('wr80',this)">WR ≥ 80%</button>
     <button class="chip" onclick="setF('pnlpos',this)">PnL Positivo</button>
     <button class="chip" onclick="setF('alert',this)">Alerta ON</button>
+    <button class="chip" onclick="setF('custom',this)">👤 Minhas Wallets</button>
   </div>
   <div class="twrap">
     <div class="wallets-table-view">
-    <table>
+    <table role="table" aria-label="Tabela de KOL Wallets">
       <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')"><span>PnL↕</span><span class="th-tip" title="Lucro ou prejuízo em R$ ou USD" onclick="event.stopPropagation()">?</span></th><th onclick="sb('winRate')"><span>WIN RATE↕</span><span class="th-tip" title="Porcentagem de trades lucrativos" onclick="event.stopPropagation()">?</span></th><th onclick="sb('trades')">TRADES↕</th><th><span>VOL 24H</span><span class="th-tip" title="Volume negociado nas últimas 24h" onclick="event.stopPropagation()">?</span></th><th>ALERTA</th></tr></thead>
       <tbody id="wBody"></tbody>
     </table>
@@ -210,9 +213,9 @@
 </div><!-- /wrap -->
 
 <!-- ═══ SETTINGS MODAL (Prompt IA, etc.) ═══ -->
-<div class="moverlay" id="settingsOverlay" onclick="closeSettingsBg(event)">
+<div class="moverlay" id="settingsOverlay" onclick="closeSettingsBg(event)" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="modal" onclick="event.stopPropagation()">
-    <button class="mx" onclick="closeSettingsModal()">✕</button>
+    <button class="mx" onclick="closeSettingsModal()" aria-label="Fechar">✕</button>
     <div class="mtitle">CONFIGURAÇÕES</div>
     <div class="msub">Prompt IA usado no botão ANALISAR</div>
     <div class="mrow">
@@ -228,9 +231,9 @@
 </div>
 
 <!-- ═══ KOL MODAL ═══ -->
-<div class="moverlay" id="kolOverlay" onclick="closeKbg(event)">
+<div class="moverlay" id="kolOverlay" onclick="closeKbg(event)" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="kmodal">
-    <button class="mx" onclick="closeKol()">✕</button>
+    <button class="mx" onclick="closeKol()" aria-label="Fechar">✕</button>
     <div class="mtitle" id="kTitle"></div>
     <div class="msub" id="kSub"></div>
     <div class="msec2">🔔 ALERTA DE ENTRY</div>
@@ -239,11 +242,44 @@
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Notificar quando esta wallet fizer um trade</span>
     </div>
     <div class="mgrid" id="kStats"></div>
+    <div class="msec2">🕐 ÚLTIMOS TRADES</div>
+    <div id="kLastTrades" class="k-last-trades"></div>
     <div class="msec2">🔗 LINKS</div>
     <div class="kmlinks" id="kLinks"></div>
+    <button type="button" class="btn by bsm" id="kShareBtn" style="margin-top:12px" onclick="shareKOLFromModal()" title="Compartilhar no X">𝕏 Compartilhar KOL</button>
   </div>
 </div>
 
+<!-- ═══ ADD WALLET MODAL ═══ -->
+<div class="moverlay" id="addWalletOverlay" onclick="closeAddWalletBg(event)" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="mx" onclick="closeAddWalletModal()" aria-label="Fechar">✕</button>
+    <div class="mtitle">➕ ADICIONAR WALLET</div>
+    <div class="msub">Monitore qualquer wallet Solana (máx 10)</div>
+    <div class="mrow">
+      <label>Endereço Solana (Base58)</label>
+      <input type="text" id="awAddress" placeholder="Cole o endereço Base58 da wallet..." maxlength="44" autocomplete="off">
+      <span id="awAddressErr" class="input-err" style="display:none">❌ Endereço Solana inválido</span>
+    </div>
+    <div class="mrow">
+      <label>Apelido (máx 20 caracteres)</label>
+      <input type="text" id="awName" placeholder="Ex: trader anon, meu amigo..." maxlength="20">
+    </div>
+    <div class="mrow">
+      <label>Twitter/X (opcional)</label>
+      <input type="text" id="awTwitter" placeholder="@handle">
+    </div>
+    <div class="mrow" style="flex-direction:row;align-items:center;gap:8px">
+      <input type="checkbox" id="awAlert" checked>
+      <label for="awAlert" style="margin:0">Ativar alerta imediatamente</label>
+    </div>
+    <div id="awLimitMsg" class="input-err" style="display:none">Limite de 10 wallets atingido. Remova uma para adicionar outra.</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button type="button" class="btn bp" onclick="saveAddWallet()">ADICIONAR</button>
+      <button type="button" class="btn" onclick="closeAddWalletModal()">CANCELAR</button>
+    </div>
+  </div>
+</div>
 
 <!-- ONBOARDING TOOLTIP (1x) -->
 <div id="onboardingOverlay" class="onboarding-overlay" style="display:none" aria-hidden="true">

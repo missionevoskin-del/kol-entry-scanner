@@ -4,6 +4,8 @@
 
 import { fmt, fmtSub, fmtMC } from '../utils/format.js';
 
+const RANK_MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
 /**
  * Renderiza cards para mobile
  */
@@ -12,14 +14,20 @@ function renderWalletCards(container, data, options) {
   const { cur, usdBRL } = options;
   container.innerHTML = data.map((k) => {
     const wr = k.winRate ?? 0;
-    const pnlLoading = k.pnl === undefined && !k._pnlUpdated;
-    const pnlClass = pnlLoading ? '' : k.pnl >= 0 ? 'positive' : 'negative';
-    const pnlVal = pnlLoading ? '—' : (k.pnl >= 0 ? '+' : '') + fmt(Math.abs(k.pnl), cur, usdBRL);
+    const pnlLoading = k.pnl === undefined && !k._pnlUpdated && !k._noHistory;
+    const pnlClass = pnlLoading ? '' : (k.pnl ?? 0) >= 0 ? 'positive' : 'negative';
+    const pnlVal = k._noHistory ? '⚠️ Sem histórico' : pnlLoading ? '—' : ((k.pnl ?? 0) >= 0 ? '+' : '') + fmt(Math.abs(k.pnl ?? 0), cur, usdBRL);
+    const rankDisplay = k.rankPnl <= 3 && k.rankPnl !== 999 ? `${RANK_MEDAL[k.rankPnl] || ''}#${k.rankPnl}` : `#${k.rankPnl === 999 ? '—' : k.rankPnl}`;
+    const hasShareData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
     return `<div class="w-card" data-action="open-kol" data-id="${k.id}" role="button" tabindex="0">
-      <div><span class="w-card-name">${k.name}</span><span class="w-card-rank">#${k.rankPnl}</span></div>
+      <div><span class="w-card-name">${k.name}</span>${k.custom ? '<span class="badge-custom">👤 Custom</span>' : ''}<span class="w-card-rank">${rankDisplay}</span></div>
       <div class="w-card-pnl ${pnlClass}">${pnlVal}</div>
-      <div class="w-card-wr">WR ${wr}% · ${k.trades} trades</div>
-      <div class="w-card-actions"><span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span></div>
+      <div class="w-card-wr">WR ${wr}% · ${k.trades ?? 0} trades</div>
+      <div class="w-card-actions">
+        ${hasShareData ? `<button type="button" class="w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>` : ''}
+        ${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}
+        <span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span>
+      </div>
     </div>`;
   }).join('');
 }
@@ -32,7 +40,7 @@ function renderWalletCards(container, data, options) {
  * @param {object} options - { cur, usdBRL }
  */
 export function renderWallets(container, emptyEl, data, options = {}) {
-  const { cur, usdBRL } = options;
+  const { cur, usdBRL, prevPnl = {} } = options;
   const cardsEl = document.getElementById('wCards');
   if (!data.length) {
     container.innerHTML = '';
@@ -56,20 +64,29 @@ export function renderWallets(container, emptyEl, data, options = {}) {
     .map((k) => {
       const wr = k.winRate ?? 0;
       const wrColor = wr >= 80 ? 'var(--color-green)' : wr >= 65 ? 'var(--color-yellow)' : 'var(--color-red)';
-      const pnlLoading = k.pnl === undefined && !k._pnlUpdated;
-      const pnlCell = pnlLoading
-        ? '<span class="spinner-inline"></span>—'
-        : k.pnl >= 0
-          ? `<span class="pv">+${fmt(k.pnl, cur, usdBRL)}</span>`
-          : `<span class="pnv">-${fmt(Math.abs(k.pnl), cur, usdBRL)}</span>`;
-      const wrCell = pnlLoading
+      const pnlLoading = k.pnl === undefined && !k._pnlUpdated && !k._noHistory;
+      const pnlNum = k.pnl ?? 0;
+      const pnlArrow = !pnlLoading && !k._noHistory ? (pnlNum > 0 ? ' ▲' : pnlNum < 0 ? ' ▼' : '') : '';
+      const pnlChanged = prevPnl[k.id] !== undefined && prevPnl[k.id] !== pnlNum && !pnlLoading && !k._noHistory;
+      const flashClass = pnlChanged ? ' flash' : '';
+      const pnlCell = k._noHistory
+        ? '<span class="pnl-no-hist">⚠️ Sem histórico</span>'
+        : pnlLoading
+          ? '<span class="spinner-inline"></span>—'
+          : pnlNum >= 0
+            ? `<span class="pv${flashClass}">+${fmt(pnlNum, cur, usdBRL)}${pnlArrow}</span>`
+            : `<span class="pnv${flashClass}">-${fmt(Math.abs(pnlNum), cur, usdBRL)}${pnlArrow}</span>`;
+      const wrCell = pnlLoading && !k._noHistory
         ? '<span class="spinner-inline"></span>—'
         : `<span style="color:${wrColor}">${wr}%</span>`;
+      const rankDisplay = k.rankPnl <= 3 && k.rankPnl !== 999 ? `${RANK_MEDAL[k.rankPnl] || ''} #${k.rankPnl}` : (k.rankPnl === 999 ? '—' : `#${k.rankPnl}`);
+      const hasShareData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
+      const rowClass = k.rankPnl <= 3 && k.rankPnl !== 999 ? ` rank-${k.rankPnl}` : '';
 
       return `
-      <tr data-action="open-kol" data-id="${k.id}" role="button" tabindex="0">
-        <td style="color:var(--muted2);font-size:11px">#${k.rankPnl}</td>
-        <td><div class="kn">${k.name}</div><div class="kh">${k.handle}</div></td>
+      <tr class="w-row${rowClass}" data-action="open-kol" data-id="${k.id}" role="button" tabindex="0">
+        <td style="color:var(--muted2);font-size:11px">${rankDisplay}</td>
+        <td><div class="kn">${k.name}${k.custom ? ' <span class="badge-custom">👤</span>' : ''}</div><div class="kh">${k.handle || k.twitter || ''}</div></td>
         <td>
           <div class="wpill" data-action="copy" data-value="${k.full || (k.wallet && k.wallet.length > 25 ? k.wallet : '')}">
             ${k.wallet}<button class="cpbtn2" aria-label="Copiar wallet">⎘</button>
@@ -77,14 +94,14 @@ export function renderWallets(container, emptyEl, data, options = {}) {
         </td>
         <td>
           ${pnlCell}
-          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${fmtSub(Math.abs(k.pnl || 0), cur, usdBRL)}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${pnlLoading || k._noHistory ? '' : fmtSub(Math.abs(pnlNum), cur, usdBRL)}</div>
         </td>
         <td>
-          <div class="wrw"><div class="wrbar"><div class="wrfill" style="width:${wr}%;background:${wrColor}"></div></div>${wrCell}</div>
+          <div class="wrw"><div class="wrbar"><div class="wrfill" style="width:${Math.min(100, wr)}%;background:${wrColor}"></div></div>${wrCell}</div>
         </td>
-        <td style="color:var(--muted2)">${k.trades}</td>
-        <td style="color:var(--accent)">${fmt(k.vol24, cur, usdBRL)}</td>
-        <td data-action="no-prop"><div class="ai"><span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span><span style="color:${k.alertOn ? 'var(--green)' : 'var(--muted)'}">${k.alertOn ? 'ON' : 'OFF'}</span></div></td>
+        <td style="color:var(--muted2)">${k.trades ?? '—'}</td>
+        <td style="color:var(--accent)">${k.vol24 != null ? fmt(k.vol24, cur, usdBRL) : '—'}</td>
+        <td data-action="no-prop"><div class="w-cell-actions"><button type="button" class="w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X" ${!hasShareData ? 'disabled' : ''}>𝕏</button>${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}<span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span><span style="color:${k.alertOn ? 'var(--green)' : 'var(--muted)'}">${k.alertOn ? 'ON' : 'OFF'}</span></div></td>
       </tr>`;
     })
     .join('');

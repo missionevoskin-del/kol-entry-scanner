@@ -10,12 +10,12 @@ import {
   AI_PROMPT_STORAGE_KEY,
 } from './config.js';
 import { fmt, fmtSub, fmtMC } from './utils/format.js';
-import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL } from './api.js';
+import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL, fetchWalletPnL } from './api.js';
 import { renderWallets, renderWalletsSkeleton } from './components/wallets.js';
 import { renderTradesList, getKolPositionForToken } from './components/trades.js';
 import { renderAlerts } from './components/alerts.js';
 import { renderTokenDetail, renderTokenEmpty, formatAIBody } from './components/token-panel.js';
-import { renderKolStats, renderKolLinks } from './components/modals.js';
+import { renderKolStats, renderKolLinks, renderKolLastTrades } from './components/modals.js';
 
 // ─── STATE ─────────────────────────────────────────────────────────────
 let state = {
@@ -36,8 +36,12 @@ let state = {
   wsConnected: false,
   searchDebounceTimer: null,
   lastFetchAt: null,
+  lastWsMsgAt: null,
 };
 const ONBOARDING_KEY = 'kolscan_onboarding_seen';
+const CUSTOM_WALLETS_KEY = 'customWallets';
+const MAX_CUSTOM_WALLETS = 10;
+const SITE_URL = 'https://kolbr-entry.up.railway.app';
 const opts = () => ({ cur: state.cur, usdBRL: state.usdBRL });
 
 // ─── DOM REFS (lazy) ─────────────────────────────────────────────────
@@ -62,13 +66,75 @@ function renderStats() {
   $('stT').textContent = state.tradeCnt;
   $('stA').textContent = kols.filter((k) => k.alertOn).length;
   updateAlertBadge();
+  updateHeroBadge();
+}
+
+function updateHeroBadge() {
+  const el = $('heroBadge');
+  const wEl = $('heroBadgeWallets');
+  const tEl = $('heroBadgeTrades');
+  if (!el || !wEl || !tEl) return;
+  const totalWallets = state.KOLS.length;
+  if (totalWallets === 0) {
+    el.style.display = 'none';
+    return;
+  }
+  wEl.textContent = totalWallets;
+  tEl.textContent = state.tradeCnt;
+  el.style.display = 'inline-block';
+}
+
+// ─── CUSTOM WALLETS ────────────────────────────────────────────────────
+function getCustomWallets() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_WALLETS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCustomWallets(arr) {
+  localStorage.setItem(CUSTOM_WALLETS_KEY, JSON.stringify(arr));
+}
+
+function mergeCustomWalletsIntoKols() {
+  const custom = getCustomWallets();
+  const officialFull = new Set(state.KOLS.filter((k) => !k.custom).map((k) => k.full || k.wallet));
+  const customKols = custom
+    .filter((c) => !officialFull.has(c.address))
+    .map((c) => ({
+      id: `custom-${c.address.slice(0, 8)}`,
+      name: c.name || 'Wallet custom',
+      handle: c.twitter || '',
+      twitter: c.twitter || '',
+      wallet: c.address.slice(0, 4) + '…' + c.address.slice(-4),
+      full: c.address,
+      custom: true,
+      alertOn: !!c.alertOn,
+      _customRaw: c,
+      pnl: c.pnl,
+      winRate: c.winRate ?? 0,
+      trades: c.trades ?? 0,
+      vol24: c.volume ?? 0,
+      rankPnl: 999,
+      _noHistory: c._noHistory,
+    }));
+  const existingIds = new Set(state.KOLS.map((k) => k.id));
+  const toAdd = customKols.filter((k) => !existingIds.has(k.id));
+  const toMerge = state.KOLS.filter((k) => !k.custom);
+  state.KOLS = [...toMerge, ...toAdd];
 }
 
 // ─── WALLETS ───────────────────────────────────────────────────────────
 function getFilteredAndSortedKols() {
+  mergeCustomWalletsIntoKols();
   let data = [...state.KOLS];
-  const byPnl = [...state.KOLS].sort((a, b) => b.pnl - a.pnl || b.winRate - a.winRate);
-  const byWr = [...state.KOLS].sort((a, b) => b.winRate - a.winRate || b.pnl - a.pnl);
+  if (state.cFilter === 'custom') {
+    data = data.filter((k) => k.custom);
+  }
+  const byPnl = [...state.KOLS].sort((a, b) => (b.pnl ?? -1e9) - (a.pnl ?? -1e9) || (b.winRate ?? 0) - (a.winRate ?? 0));
+  const byWr = [...state.KOLS].sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0) || (b.pnl ?? -1e9) - (a.pnl ?? -1e9));
   const rankPnlMap = new Map(byPnl.map((k, i) => [k.id, i + 1]));
   const rankWrMap = new Map(byWr.map((k, i) => [k.id, i + 1]));
   data = data.map((k) => ({
@@ -80,8 +146,8 @@ function getFilteredAndSortedKols() {
   const q = ($('srch')?.value || '').toLowerCase();
   if (q) data = data.filter((k) => (k.name || '').toLowerCase().includes(q) || (k.handle || '').toLowerCase().includes(q) || (k.wallet || '').toLowerCase().includes(q));
   if (state.cFilter === 'top') data = data.filter((k) => k.rankPnl <= 10);
-  else if (state.cFilter === 'wr80') data = data.filter((k) => k.winRate >= 80);
-  else if (state.cFilter === 'pnlpos') data = data.filter((k) => k.pnl > 0);
+  else if (state.cFilter === 'wr80') data = data.filter((k) => (k.winRate ?? 0) >= 80);
+  else if (state.cFilter === 'pnlpos') data = data.filter((k) => (k.pnl ?? 0) > 0);
   else if (state.cFilter === 'alert') data = data.filter((k) => k.alertOn);
 
   const va = state.sKey;
@@ -95,9 +161,12 @@ function getFilteredAndSortedKols() {
   return data;
 }
 
+const lastPnlMap = {};
 function renderW() {
   const data = getFilteredAndSortedKols();
-  renderWallets($('wBody'), $('emptyW'), data, opts());
+  const options = { ...opts(), prevPnl: { ...lastPnlMap } };
+  renderWallets($('wBody'), $('emptyW'), data, options);
+  data.forEach((k) => { if (k.pnl != null) lastPnlMap[k.id] = k.pnl; });
   renderStats();
 }
 
@@ -119,6 +188,7 @@ function addTrade(tok) {
   state.allTrades.unshift(enriched);
   if (state.allTrades.length > 120) state.allTrades.pop();
   state.tradeCnt++;
+  state.lastWsMsgAt = Date.now();
   $('tBadge').textContent = state.tradeCnt;
   renderTradesFiltered();
   $('tEmpty').style.display = 'none';
@@ -199,7 +269,7 @@ function attachAIBtnHandler(tok) {
     }
     tok.aiAnalysis = result;
     const kolPosition = getKolPositionForToken(state.allTrades, tok.kol, tok.ca);
-    container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition });
+    $('tokDetail').innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition });
     attachAIBtnHandler(tok);
     attachShareCopyHandlers(tok, result);
   };
@@ -210,10 +280,10 @@ function attachShareCopyHandlers(tok, analysis) {
   const copyBtn = $('aiCopyBtn');
   const aiBody = $('aiBody');
   if (!aiBody) return;
-  const analysisText = typeof analysis === 'object'
-    ? `${analysis.veredito || 'ANÁLISE'}: ${(analysis.resumo || '').slice(0, 200)}...`
-    : aiBody.innerText.slice(0, 200);
-  const shareText = `🚨 ${tok.kol?.name || 'KOL'} entrou em $${tok.symbol || 'TOKEN'} com ${fmt(tok.valUsd, state.cur, state.usdBRL)} — Veja a análise: ${window.location.href} via @WeedzinxD #SolanaBR #CryptoBR`;
+  const fullText = aiBody.innerText || '';
+  const sentences = fullText.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const firstTwo = sentences.slice(0, 2).join(' ').trim() || fullText.slice(0, 200);
+  const shareText = `${firstTwo}\n\n${SITE_URL} via @WeedzinxD #SolanaBR #CryptoBR`;
   if (shareBtn) {
     shareBtn.onclick = () => {
       const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
@@ -223,8 +293,7 @@ function attachShareCopyHandlers(tok, analysis) {
   }
   if (copyBtn) {
     copyBtn.onclick = () => {
-      const toCopy = aiBody.innerText || analysisText;
-      navigator.clipboard.writeText(toCopy).then(() => showToast('Análise copiada!')).catch(() => showToast('Falha ao copiar'));
+      navigator.clipboard.writeText(fullText).then(() => showToast('Análise copiada!')).catch(() => showToast('Falha ao copiar'));
     };
   }
 }
@@ -271,13 +340,21 @@ function beep(type) {
 
 // ─── KOL MODAL ───────────────────────────────────────────────────────
 function openKol(id) {
-  const k = state.KOLS.find((kol) => kol.id === id);
+  const k = state.KOLS.find((kol) => String(kol.id) === String(id) || kol.full === id);
   if (!k) return;
   state.curKol = k;
   $('kTitle').textContent = k.name;
-  $('kSub').textContent = k.handle + ' · Solana';
+  $('kSub').textContent = (k.handle || k.twitter || '') + ' · Solana';
   $('kStats').innerHTML = renderKolStats(k, state.cur, state.usdBRL);
   $('kLinks').innerHTML = renderKolLinks(k);
+  const lastTradesEl = $('kLastTrades');
+  if (lastTradesEl) lastTradesEl.innerHTML = renderKolLastTrades(k, state.allTrades);
+  const shareBtn = $('kShareBtn');
+  if (shareBtn) {
+    const hasData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
+    shareBtn.disabled = !hasData;
+    shareBtn.title = hasData ? 'Compartilhar no X' : 'Aguardando dados reais';
+  }
   const ab = $('kABtn');
   ab.textContent = k.alertOn ? 'DESATIVAR ALERTA' : 'ATIVAR ALERTA';
   ab.style.borderColor = k.alertOn ? 'var(--color-red)' : 'var(--color-green)';
@@ -300,6 +377,119 @@ function togKA() {
 
 function closeKol() {
   $('kolOverlay').classList.remove('open');
+}
+
+function shareKOL(kol) {
+  let line1 = `📊 ${kol.name || 'KOL'} — KOL Solana BR`;
+  const stats = [];
+  if (kol.winRate != null && kol.winRate !== undefined) stats.push(`Win Rate: ${kol.winRate}%`);
+  if (kol.pnl != null && kol.pnl !== undefined) stats.push(`PnL: ${fmt(kol.pnl, 'BRL', state.usdBRL)}`);
+  if (stats.length) line1 += '\n' + stats.join(' | ');
+  const text = line1 + '\n\nMonitore os KOLs BR em tempo real 👇\n' + SITE_URL + '\nvia @WeedzinxD #SolanaBR #CryptoBR';
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  showToast('Abrindo X...');
+}
+
+function shareKOLFromModal() {
+  if (!state.curKol) return;
+  const k = state.curKol;
+  const hasData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
+  if (!hasData) {
+    showToast('Aguardando dados reais');
+    return;
+  }
+  shareKOL(k);
+}
+
+// ─── ADD WALLET MODAL ───────────────────────────────────────────────────
+const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+function isValidSolanaAddress(addr) {
+  return addr && typeof addr === 'string' && BASE58.test(addr.trim());
+}
+
+function openAddWalletModal() {
+  const custom = getCustomWallets();
+  const overlay = $('addWalletOverlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  $('awAddress').value = '';
+  $('awName').value = '';
+  $('awTwitter').value = '';
+  $('awAlert').checked = true;
+  $('awAddressErr').style.display = 'none';
+  $('awLimitMsg').style.display = custom.length >= MAX_CUSTOM_WALLETS ? 'block' : 'none';
+  $('awAddress').focus();
+}
+
+function closeAddWalletModal() {
+  const overlay = $('addWalletOverlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function closeAddWalletBg(e) {
+  if (e.target === $('addWalletOverlay')) closeAddWalletModal();
+}
+
+async function saveAddWallet() {
+  const custom = getCustomWallets();
+  if (custom.length >= MAX_CUSTOM_WALLETS) {
+    showToast('Limite de 10 wallets atingido');
+    return;
+  }
+  const addr = ($('awAddress')?.value || '').trim();
+  if (!isValidSolanaAddress(addr)) {
+    $('awAddressErr').style.display = 'block';
+    return;
+  }
+  $('awAddressErr').style.display = 'none';
+  const name = ($('awName')?.value || '').trim().slice(0, 20) || 'Wallet custom';
+  const twitter = ($('awTwitter')?.value || '').trim();
+  const alertOn = $('awAlert')?.checked ?? true;
+  const newW = { address: addr, name, twitter, alertOn, addedAt: Date.now(), custom: true };
+  custom.push(newW);
+  saveCustomWallets(custom);
+  closeAddWalletModal();
+  showToast(`✅ Wallet ${name} adicionada!`);
+  const periodMap = { D: 'daily', W: 'weekly', M: 'monthly' };
+  const period = periodMap[($('pFil')?.value || 'D')] || 'daily';
+  const pnlData = await fetchWalletPnL(addr, period);
+  if (pnlData) {
+    const idx = custom.findIndex((c) => c.address === addr);
+    if (idx >= 0) {
+      custom[idx] = { ...custom[idx], pnl: pnlData.pnl, winRate: pnlData.winRate, trades: pnlData.trades, volume: pnlData.volume };
+      saveCustomWallets(custom);
+    }
+  } else {
+    const idx = custom.findIndex((c) => c.address === addr);
+    if (idx >= 0) {
+      custom[idx]._noHistory = true;
+      saveCustomWallets(custom);
+    }
+  }
+  updateCustomWCount();
+  renderW();
+  renderStats();
+}
+
+function removeCustomWallet(address) {
+  const name = getCustomWallets().find((c) => c.address === address)?.name || 'Wallet';
+  if (!confirm(`Remover ${name}?`)) return;
+  const custom = getCustomWallets().filter((c) => c.address !== address);
+  saveCustomWallets(custom);
+  state.KOLS = state.KOLS.filter((k) => k.full !== address);
+  updateCustomWCount();
+  renderW();
+  renderStats();
+  showToast('Wallet removida');
+}
+
+function updateCustomWCount() {
+  const el = $('customWCount');
+  if (!el) return;
+  const n = getCustomWallets().length;
+  el.style.display = n > 0 ? 'block' : 'none';
+  el.textContent = `${n}/${MAX_CUSTOM_WALLETS} wallets customizadas`;
 }
 
 // ─── TABS ────────────────────────────────────────────────────────────
@@ -462,13 +652,15 @@ function connectWS() {
     ws = new WebSocket(WS_URL);
     ws.onopen = () => {
       state.wsConnected = true;
+      state.lastWsMsgAt = state.lastWsMsgAt || Date.now();
       state.lastFetchAt = state.lastFetchAt || Date.now();
       $('liveLabel').textContent = 'AO VIVO';
       $('wsDot')?.setAttribute('data-status', 'connected');
       $('wsDot')?.classList.add('ws-dot');
-      $('wsStatus')?.setAttribute('aria-label', 'WebSocket conectado');
+      updateWsTooltip();
     };
     ws.onmessage = (ev) => {
+      state.lastWsMsgAt = Date.now();
       try {
         const msg = JSON.parse(ev.data);
         if (msg.type === 'trade' && msg.data) addTrade(msg.data);
@@ -478,16 +670,16 @@ function connectWS() {
     ws.onclose = () => {
       state.wsConnected = false;
       $('liveLabel').textContent = 'RECONECTANDO...';
-      $('wsDot')?.removeAttribute('data-status');
+      $('wsDot')?.setAttribute('data-status', 'connecting');
       $('wsDot')?.classList.remove('ws-dot');
-      $('wsStatus')?.setAttribute('aria-label', 'WebSocket reconectando');
+      updateWsTooltip();
       setTimeout(connectWS, 3000);
     };
     ws.onerror = () => {
       state.wsConnected = false;
       $('liveLabel').textContent = 'ERRO WS';
       $('wsDot')?.setAttribute('data-status', 'error');
-      $('wsStatus')?.setAttribute('aria-label', 'Erro na conexão WebSocket');
+      updateWsTooltip();
     };
   } catch (e) {
     $('liveLabel').textContent = 'DEMO (backend offline)';
@@ -496,6 +688,7 @@ function connectWS() {
 
 function handlePnLUpdate(data) {
   if (!data?.kols?.length) return;
+  state.lastWsMsgAt = Date.now();
   const { kols: updatedKols, period } = data;
   if (period && state.currentPeriod !== 'daily' && period !== state.currentPeriod) return;
   const alertOnMap = {};
@@ -520,10 +713,28 @@ function setupEventDelegation() {
       return;
     }
 
+    const removeEl = e.target.closest('[data-action="remove-custom-wallet"]');
+    if (removeEl) {
+      e.stopPropagation();
+      const addr = removeEl.dataset.address;
+      if (addr) removeCustomWallet(addr);
+      return;
+    }
+
+    const shareKolEl = e.target.closest('[data-action="share-kol"]');
+    if (shareKolEl) {
+      e.stopPropagation();
+      const id = shareKolEl.dataset.id;
+      const k = state.KOLS.find((kol) => String(kol.id) === id);
+      if (k) shareKOL(k);
+      return;
+    }
+
     const openKolEl = e.target.closest('[data-action="open-kol"]');
-    if (openKolEl) {
-      const id = parseInt(openKolEl.dataset.id, 10);
-      if (!isNaN(id)) openKol(id);
+    if (openKolEl && !e.target.closest('[data-action="share-kol"]') && !e.target.closest('[data-action="remove-custom-wallet"]')) {
+      const id = openKolEl.dataset.id;
+      const k = state.KOLS.find((kol) => String(kol.id) === id || kol.full === id);
+      if (k) openKol(k.id);
       return;
     }
 
@@ -547,7 +758,14 @@ function setupEventDelegation() {
     })()
   );
 
-  // pFil, ttFil, kABtn: handlers inline no HTML — não duplicar com addEventListener
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      if ($('addWalletOverlay')?.classList.contains('open')) closeAddWalletModal();
+      else if ($('settingsOverlay')?.classList.contains('open')) closeSettingsModal();
+      else if ($('kolOverlay')?.classList.contains('open')) closeKol();
+      else if ($('onboardingOverlay')?.style.display === 'flex') closeOnboarding();
+    }
+  });
 }
 
 // Delegation for trade row click (show token) - ignore clicks on copy/buttons
@@ -568,15 +786,30 @@ document.addEventListener('click', (e) => {
 
 // Copy em .tca já tratado pelo handler principal [data-action="copy"]
 
+function updateWsTooltip() {
+  const el = $('wsStatus');
+  if (!el) return;
+  const stateNames = { 0: 'CONECTANDO', 1: 'ABERTO', 2: 'FECHANDO', 3: 'FECHADO' };
+  const wsState = ws?.readyState ?? 3;
+  const lastMsg = state.lastWsMsgAt
+    ? new Date(state.lastWsMsgAt).toLocaleTimeString('pt-BR')
+    : 'nunca';
+  el.title = `WebSocket: ${stateNames[wsState] || 'DESCONHECIDO'} | Última msg: ${lastMsg}`;
+  el.setAttribute('aria-label', `Status: ${$('liveLabel')?.textContent || ''}`);
+}
+
 function updateLastUpdateEl() {
   const el = $('lastUpdate');
   if (!el) return;
-  if (state.lastFetchAt) {
-    const sec = Math.floor((Date.now() - state.lastFetchAt) / 1000);
-    el.textContent = sec < 60 ? `Última atualização: ${sec}s atrás` : `Última atualização: há ${Math.floor(sec / 60)} min`;
-  } else {
+  const ts = state.lastWsMsgAt ?? state.lastFetchAt;
+  if (!ts) {
     el.textContent = 'Última atualização: —';
+    el.classList.remove('last-update-stale');
+    return;
   }
+  const sec = Math.floor((Date.now() - ts) / 1000);
+  el.textContent = sec < 60 ? `Última atualização: ${sec}s atrás` : `Última atualização: há ${Math.floor(sec / 60)} min`;
+  el.classList.toggle('last-update-stale', sec > 300);
 }
 
 function maybeShowOnboarding() {
@@ -651,13 +884,14 @@ async function init() {
   setupEventDelegation();
   maybeShowOnboarding();
 
+  updateCustomWCount();
   renderW();
   renderStats();
   renderA();
   updateAlertBadge();
   connectWS();
   updateLastUpdateEl();
-  setInterval(updateLastUpdateEl, 5000);
+  setInterval(updateLastUpdateEl, 1000);
 
   setTimeout(() => {
     const dot = $('wsDot');
@@ -694,6 +928,11 @@ window.togKA = togKA;
 window.closeKbg = (e) => {
   if (e.target === $('kolOverlay')) closeKol();
 };
+window.openAddWalletModal = openAddWalletModal;
+window.closeAddWalletModal = closeAddWalletModal;
+window.closeAddWalletBg = closeAddWalletBg;
+window.saveAddWallet = saveAddWallet;
+window.shareKOL = shareKOL;
 window.saveAIPrompt = saveAIPrompt;
 window.resetAIPrompt = resetAIPrompt;
 window.forceRefreshPnL = forceRefreshPnL;
@@ -704,7 +943,8 @@ function limparFiltros() {
   if (srch) srch.value = '';
   qsa('.chip').forEach((c) => {
     c.classList.remove('active');
-    if (c.textContent.trim() === 'Todos') c.classList.add('active');
+    const t = c.textContent.trim();
+    if (t === 'Todos') c.classList.add('active');
   });
   renderW();
 }

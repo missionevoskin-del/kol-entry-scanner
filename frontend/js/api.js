@@ -146,6 +146,19 @@ export async function fetchKols() {
  * Força refresh de PnL no backend
  * @param {string} period - 'daily' | 'weekly' | 'monthly'
  */
+/**
+ * Busca PnL de uma wallet específica
+ * @param {string} wallet - endereço Solana
+ * @param {string} period - 'daily' | 'weekly' | 'monthly'
+ */
+export async function fetchWalletPnL(wallet, period = 'daily') {
+  try {
+    const r = await fetch(`${API_BASE || ''}/api/pnl/${encodeURIComponent(wallet)}?period=${period}`);
+    if (r.ok) return await r.json();
+  } catch (e) {}
+  return null;
+}
+
 export async function refreshPnL(period = 'daily') {
   try {
     const r = await fetch(`${API_BASE || ''}/api/kols/refresh-pnl`, {
