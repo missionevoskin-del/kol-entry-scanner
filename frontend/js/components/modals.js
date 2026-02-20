@@ -23,8 +23,14 @@ export function renderKolStats(kol, cur, usdBRL) {
 
 /**
  * Renderiza últimos trades reais do KOL (da sessão em memória)
+ * @param {object} kol
+ * @param {Array} allTrades
+ * @param {boolean} hasHelius - se API está configurada
  */
-export function renderKolLastTrades(kol, allTrades) {
+export function renderKolLastTrades(kol, allTrades, hasHelius = true) {
+  if (!hasHelius) {
+    return '<div class="klt-empty"><span>📡</span><p>Configure Helius API para ver trades ao vivo</p></div>';
+  }
   const full = kol.full || (kol.wallet && String(kol.wallet).length > 25 ? kol.wallet : null);
   if (!full || !allTrades?.length) return '<p class="k-no-trades">Nenhum trade registrado nesta sessão</p>';
   const kolTrades = allTrades.filter((t) => {
@@ -32,7 +38,12 @@ export function renderKolLastTrades(kol, allTrades) {
     return tFull && (tFull === full || tFull.toLowerCase() === full.toLowerCase());
   }).slice(0, 5);
   if (kolTrades.length === 0) return '<p class="k-no-trades">Nenhum trade registrado nesta sessão</p>';
-  return `<ul class="k-trades-list">${kolTrades.map((t) => `<li>${t.type === 'buy' ? '🟢' : '🔴'} ${t.name || t.symbol || '?'} — $${(t.valUsd ?? 0).toLocaleString()}</li>`).join('')}</ul>`;
+  const fmt = (v) => (v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v.toFixed(0));
+  return `<div class="k-last-trades">${kolTrades.map((t) => {
+    const time = t._time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const val = t.valUsd ?? 0;
+    return `<div class="klt-item"><span class="klt-time">${time}</span><span class="klt-token">${t.name || t.symbol || '?'}</span><span class="klt-type ${t.type === 'buy' ? 'klt-buy' : 'klt-sell'}">${t.type === 'buy' ? 'COMPRA' : 'VENDA'}</span><span class="klt-val">$${fmt(val)}</span></div>`;
+  }).join('')}</div>`;
 }
 
 /**

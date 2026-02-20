@@ -24,7 +24,7 @@ function renderWalletCards(container, data, options) {
       <div class="w-card-pnl ${pnlClass}">${pnlVal}</div>
       <div class="w-card-wr">WR ${wr}% · ${k.trades ?? 0} trades</div>
       <div class="w-card-actions">
-        ${hasShareData ? `<button type="button" class="w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>` : ''}
+        <button type="button" class="share-kol-btn w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>
         ${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}
         <span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span>
       </div>
@@ -67,8 +67,9 @@ export function renderWallets(container, emptyEl, data, options = {}) {
       const pnlLoading = k.pnl === undefined && !k._pnlUpdated && !k._noHistory;
       const pnlNum = k.pnl ?? 0;
       const pnlArrow = !pnlLoading && !k._noHistory ? (pnlNum > 0 ? ' ▲' : pnlNum < 0 ? ' ▼' : '') : '';
-      const pnlChanged = prevPnl[k.id] !== undefined && prevPnl[k.id] !== pnlNum && !pnlLoading && !k._noHistory;
-      const flashClass = pnlChanged ? ' flash' : '';
+      const prevVal = prevPnl[k.id];
+      const pnlChanged = prevVal !== undefined && prevVal !== pnlNum && !pnlLoading && !k._noHistory;
+      const flashClass = pnlChanged ? (pnlNum > prevVal ? ' flash-green' : ' flash-red') : '';
       const pnlCell = k._noHistory
         ? '<span class="pnl-no-hist">⚠️ Sem histórico</span>'
         : pnlLoading
@@ -81,12 +82,13 @@ export function renderWallets(container, emptyEl, data, options = {}) {
         : `<span style="color:${wrColor}">${wr}%</span>`;
       const rankDisplay = k.rankPnl <= 3 && k.rankPnl !== 999 ? `${RANK_MEDAL[k.rankPnl] || ''} #${k.rankPnl}` : (k.rankPnl === 999 ? '—' : `#${k.rankPnl}`);
       const hasShareData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
-      const rowClass = k.rankPnl <= 3 && k.rankPnl !== 999 ? ` rank-${k.rankPnl}` : '';
+      const rowClass = k.rankPnl <= 3 && k.rankPnl !== 999 ? ` rank-${k.rankPnl} tr-top3` : '';
+      const rankTop3Class = k.rankPnl <= 3 && k.rankPnl !== 999 ? ' rank-top3' : '';
 
       return `
       <tr class="w-row${rowClass}" data-action="open-kol" data-id="${k.id}" role="button" tabindex="0">
         <td style="color:var(--muted2);font-size:11px">${rankDisplay}</td>
-        <td><div class="kn">${k.name}${k.custom ? ' <span class="badge-custom">👤</span>' : ''}</div><div class="kh">${k.handle || k.twitter || ''}</div></td>
+        <td><div class="kn${rankTop3Class}">${k.name}${k.custom ? ' <span class="badge-custom">👤</span>' : ''}</div><div class="kh">${k.handle || k.twitter || ''}</div></td>
         <td>
           <div class="wpill" data-action="copy" data-value="${k.full || (k.wallet && k.wallet.length > 25 ? k.wallet : '')}">
             ${k.wallet}<button class="cpbtn2" aria-label="Copiar wallet">⎘</button>
@@ -101,7 +103,7 @@ export function renderWallets(container, emptyEl, data, options = {}) {
         </td>
         <td style="color:var(--muted2)">${k.trades ?? '—'}</td>
         <td style="color:var(--accent)">${k.vol24 != null ? fmt(k.vol24, cur, usdBRL) : '—'}</td>
-        <td data-action="no-prop"><div class="w-cell-actions"><button type="button" class="w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X" ${!hasShareData ? 'disabled' : ''}>𝕏</button>${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}<span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span><span style="color:${k.alertOn ? 'var(--green)' : 'var(--muted)'}">${k.alertOn ? 'ON' : 'OFF'}</span></div></td>
+        <td data-action="no-prop"><div class="w-cell-actions"><button type="button" class="share-kol-btn w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}<span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span><span style="color:${k.alertOn ? 'var(--green)' : 'var(--muted)'}">${k.alertOn ? 'ON' : 'OFF'}</span></div></td>
       </tr>`;
     })
     .join('');

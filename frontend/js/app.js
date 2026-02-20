@@ -37,6 +37,7 @@ let state = {
   searchDebounceTimer: null,
   lastFetchAt: null,
   lastWsMsgAt: null,
+  hasHelius: true,
 };
 const ONBOARDING_KEY = 'kolscan_onboarding_seen';
 const CUSTOM_WALLETS_KEY = 'customWallets';
@@ -81,7 +82,15 @@ function updateHeroBadge() {
   }
   wEl.textContent = totalWallets;
   tEl.textContent = state.tradeCnt;
-  el.style.display = 'inline-block';
+  const wasHidden = el.style.display === 'none' || !el.style.display;
+  el.style.display = 'flex';
+  if (wasHidden) {
+    el.style.opacity = '0';
+    requestAnimationFrame(() => {
+      el.style.transition = 'opacity 0.6s ease';
+      el.style.opacity = '1';
+    });
+  }
 }
 
 // ─── CUSTOM WALLETS ────────────────────────────────────────────────────
@@ -293,7 +302,7 @@ function attachShareCopyHandlers(tok, analysis) {
   }
   if (copyBtn) {
     copyBtn.onclick = () => {
-      navigator.clipboard.writeText(fullText).then(() => showToast('Análise copiada!')).catch(() => showToast('Falha ao copiar'));
+      navigator.clipboard.writeText(fullText).then(() => showToast('✅ Análise copiada!')).catch(() => showToast('Falha ao copiar'));
     };
   }
 }
@@ -348,7 +357,7 @@ function openKol(id) {
   $('kStats').innerHTML = renderKolStats(k, state.cur, state.usdBRL);
   $('kLinks').innerHTML = renderKolLinks(k);
   const lastTradesEl = $('kLastTrades');
-  if (lastTradesEl) lastTradesEl.innerHTML = renderKolLastTrades(k, state.allTrades);
+  if (lastTradesEl) lastTradesEl.innerHTML = renderKolLastTrades(k, state.allTrades, state.hasHelius);
   const shareBtn = $('kShareBtn');
   if (shareBtn) {
     const hasData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
@@ -392,13 +401,7 @@ function shareKOL(kol) {
 
 function shareKOLFromModal() {
   if (!state.curKol) return;
-  const k = state.curKol;
-  const hasData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
-  if (!hasData) {
-    showToast('Aguardando dados reais');
-    return;
-  }
-  shareKOL(k);
+  shareKOL(state.curKol);
 }
 
 // ─── ADD WALLET MODAL ───────────────────────────────────────────────────
@@ -789,12 +792,12 @@ document.addEventListener('click', (e) => {
 function updateWsTooltip() {
   const el = $('wsStatus');
   if (!el) return;
-  const stateNames = { 0: 'CONECTANDO', 1: 'ABERTO', 2: 'FECHANDO', 3: 'FECHADO' };
+  const stateNames = { 0: 'conectando', 1: 'aberto', 2: 'fechando', 3: 'fechado' };
   const wsState = ws?.readyState ?? 3;
-  const lastMsg = state.lastWsMsgAt
-    ? new Date(state.lastWsMsgAt).toLocaleTimeString('pt-BR')
-    : 'nunca';
-  el.title = `WebSocket: ${stateNames[wsState] || 'DESCONHECIDO'} | Última msg: ${lastMsg}`;
+  const timeStr = state.lastWsMsgAt
+    ? `Última msg: ${Math.floor((Date.now() - state.lastWsMsgAt) / 1000)}s atrás`
+    : 'Nenhuma mensagem ainda';
+  el.title = `WebSocket: ${stateNames[wsState] || 'desconhecido'} | ${timeStr}`;
   el.setAttribute('aria-label', `Status: ${$('liveLabel')?.textContent || ''}`);
 }
 
@@ -808,7 +811,8 @@ function updateLastUpdateEl() {
     return;
   }
   const sec = Math.floor((Date.now() - ts) / 1000);
-  el.textContent = sec < 60 ? `Última atualização: ${sec}s atrás` : `Última atualização: há ${Math.floor(sec / 60)} min`;
+  const min = Math.floor(sec / 60);
+  el.textContent = sec < 60 ? `Última atualização: ${sec}s atrás` : `Última atualização: ${min}min atrás`;
   el.classList.toggle('last-update-stale', sec > 300);
 }
 
@@ -858,6 +862,7 @@ async function init() {
   }, BRL_UPDATE_INTERVAL_MS);
 
   const apiStatus = await fetchApiStatus();
+  state.hasHelius = !!apiStatus.helius;
   if (!apiStatus.helius) $('banner-setup').style.display = 'block';
 
   renderWalletsSkeleton($('wBody'), $('emptyW'));
@@ -891,7 +896,10 @@ async function init() {
   updateAlertBadge();
   connectWS();
   updateLastUpdateEl();
-  setInterval(updateLastUpdateEl, 1000);
+  setInterval(() => {
+    updateLastUpdateEl();
+    updateWsTooltip();
+  }, 1000);
 
   setTimeout(() => {
     const dot = $('wsDot');
