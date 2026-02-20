@@ -32,7 +32,7 @@
     <div><h1>KOL ENTRY SCANNER</h1><p>KOLScan Brasil — Powered by Helius + GPT-4o mini</p></div>
   </div>
   <div class="trr">
-    <div class="brlbox"><div><div class="bl">USD / BRL</div><div class="bv" id="brlVal">R$ 5,12</div><div class="bs" id="brlTime">—</div></div></div>
+    <div class="brlbox"><div><div class="bl">USD / BRL</div><div class="bv" id="brlVal">R$ 5,12</div></div></div>
     <div class="ctog"><button id="btnBRL" class="active" onclick="setCur('BRL')">R$ BRL</button><button id="btnUSD" onclick="setCur('USD')">$ USD</button></div>
     <div class="livebadge" id="wsStatus" aria-live="polite" aria-label="Status da conexão"><div class="dot" id="wsDot"></div><span id="liveLabel">CONECTANDO...</span></div>
     <button class="cfg-btn" onclick="openSettingsModal()" title="Configurações" aria-label="Abrir configurações">⚙</button>
@@ -72,7 +72,7 @@
   </div>
   <div class="twrap">
     <table>
-      <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th><th>VER</th></tr></thead>
+      <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')">PnL↕</th><th onclick="sb('winRate')">WIN RATE↕</th><th onclick="sb('trades')">TRADES↕</th><th>VOL 24H</th><th>ALERTA</th></tr></thead>
       <tbody id="wBody"></tbody>
     </table>
     <div id="emptyW" class="empty" style="display:none" hidden aria-live="polite" aria-hidden="true"><div class="ei">⬡</div><p>Nenhuma wallet encontrada</p></div>
@@ -127,6 +127,13 @@
 <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 </main>
+<footer class="app-footer">
+  <span>Desenvolvido por <a href="https://webpelotas.netlify.app/" target="_blank" rel="noopener">Web Pelotas</a></span>
+  <span>·</span>
+  <a href="https://x.com/WeedzinxD" target="_blank" rel="noopener">@WeedzinxD</a>
+  <span>·</span>
+  <span id="lastUpdate">Última atualização: —</span>
+</footer>
 </div><!-- /wrap -->
 
 <!-- ═══ SETTINGS MODAL (Prompt IA, etc.) ═══ -->
@@ -161,8 +168,6 @@
     <div class="mgrid" id="kStats"></div>
     <div class="msec2">🔗 LINKS</div>
     <div class="kmlinks" id="kLinks"></div>
-    <div class="msec2">📊 ÚLTIMAS 4 TRADES</div>
-    <div class="kLastTrades" id="kLastTrades"></div>
   </div>
 </div>
 

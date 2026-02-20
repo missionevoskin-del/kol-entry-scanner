@@ -58,6 +58,24 @@ body::before {
   padding: 0 16px 70px;
 }
 
+.app-footer {
+  text-align: center;
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted-2);
+  border-top: 1px solid var(--color-border);
+}
+.app-footer a {
+  color: var(--color-text-muted-2);
+  text-decoration: none;
+}
+.app-footer a:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+.app-footer span { margin: 0 4px; }
+
 /* Utilidades de cor */
 .color-positive { color: var(--color-green); }
 .color-negative { color: var(--color-red); }

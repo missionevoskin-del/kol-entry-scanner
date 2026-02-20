@@ -84,6 +84,7 @@ function parseSwapFromTx(parsed, walletAddr) {
 
   const kol = getKolByWallet(parsed.feePayer || walletAddr);
   if (!kol) return null;
+  kol.full = kol.full || parsed.feePayer || walletAddr;
 
   const tokenTransfers = parsed.tokenTransfers || [];
   const nativeTransfers = parsed.nativeTransfers || [];

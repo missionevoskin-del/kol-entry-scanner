@@ -21,6 +21,9 @@ const MAX_TRADES_RENDERED = 60;
 /** Chave localStorage para prompt IA */
 const AI_PROMPT_STORAGE_KEY = 'kolscan_ai_prompt';
 
+/** Última atualização do app (exibida no rodapé) */
+const LAST_UPDATE = '2025-02-19';
+
 export {
   IS_PRODUCTION,
   API_BASE,
@@ -29,4 +32,5 @@ export {
   SEARCH_DEBOUNCE_MS,
   MAX_TRADES_RENDERED,
   AI_PROMPT_STORAGE_KEY,
+  LAST_UPDATE,
 };

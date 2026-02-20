@@ -8,14 +8,15 @@ import {
   BRL_UPDATE_INTERVAL_MS,
   SEARCH_DEBOUNCE_MS,
   AI_PROMPT_STORAGE_KEY,
+  LAST_UPDATE,
 } from './config.js';
 import { fmt, fmtSub, fmtMC } from './utils/format.js';
 import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL } from './api.js';
 import { renderWallets, renderWalletsSkeleton } from './components/wallets.js';
-import { renderTradesList } from './components/trades.js';
+import { renderTradesList, getKolPositionForToken } from './components/trades.js';
 import { renderAlerts } from './components/alerts.js';
 import { renderTokenDetail, renderTokenEmpty, formatAIBody } from './components/token-panel.js';
-import { renderKolStats, renderKolLinks, renderKolLastTrades } from './components/modals.js';
+import { renderKolStats, renderKolLinks } from './components/modals.js';
 
 // ─── STATE ─────────────────────────────────────────────────────────────
 let state = {
@@ -138,8 +139,9 @@ let _currentTok = null;
 
 async function showTokDetail(tok) {
   _currentTok = tok;
+  const kolPosition = getKolPositionForToken(state.allTrades, tok.kol, tok.ca);
   const container = $('tokDetail');
-  container.innerHTML = renderTokenDetail(tok, opts());
+  container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition });
   attachAIBtnHandler(tok);
   enrichFromDex(tok);
 }
@@ -157,7 +159,8 @@ async function enrichFromDex(tok) {
   if (_currentTok?.ca === tok.ca) {
     const container = $('tokDetail');
     if (container) {
-      container.innerHTML = renderTokenDetail(tok, opts());
+      const kolPosition = getKolPositionForToken(state.allTrades, tok.kol, tok.ca);
+      container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition });
       attachAIBtnHandler(tok);
     }
   }
@@ -263,22 +266,6 @@ function openKol(id) {
   $('kSub').textContent = k.handle + ' · Solana';
   $('kStats').innerHTML = renderKolStats(k, state.cur, state.usdBRL);
   $('kLinks').innerHTML = renderKolLinks(k);
-  const kolFull = k.full || (k.wallet && k.wallet.length > 25 ? k.wallet : null);
-  const lastTrades = state.allTrades
-    .filter((t) => {
-      const tFull = t.kol?.full || (t.kol?.wallet && t.kol.wallet.length > 25 ? t.kol.wallet : null);
-      return kolFull && tFull === kolFull;
-    })
-    .slice(0, 4);
-  lastTrades.forEach((t, i) => (t._index = state.allTrades.indexOf(t)));
-  const kLastEl = $('kLastTrades');
-  kLastEl.innerHTML = renderKolLastTrades(lastTrades, fmtF);
-  kLastEl.querySelectorAll('.kt-mini').forEach((el, i) => {
-    el.onclick = () => {
-      closeKol();
-      showTokDetail(lastTrades[i]);
-    };
-  });
   const ab = $('kABtn');
   ab.textContent = k.alertOn ? 'DESATIVAR ALERTA' : 'ATIVAR ALERTA';
   ab.style.borderColor = k.alertOn ? 'var(--color-red)' : 'var(--color-green)';
@@ -562,16 +549,12 @@ document.addEventListener('click', (e) => {
 // Copy em .tca já tratado pelo handler principal [data-action="copy"]
 
 // ─── INIT ────────────────────────────────────────────────────────────
-function updTime() {
-  $('brlTime').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
 async function init() {
   console.log('[init] API_BASE:', API_BASE || '(mesmo domínio)');
   console.log('[init] WS_URL:', WS_URL);
 
-  updTime();
-  setInterval(updTime, 30000);
+  const lastUp = $('lastUpdate');
+  if (lastUp) lastUp.textContent = 'Última atualização: ' + LAST_UPDATE;
 
   const rate = await fetchBRLRate();
   if (rate) {

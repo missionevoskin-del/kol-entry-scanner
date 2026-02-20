@@ -32,24 +32,3 @@ export function renderKolLinks(kol) {
   `;
 }
 
-/**
- * Renderiza últimas trades do KOL no modal
- */
-export function renderKolLastTrades(lastTrades, fmtFn) {
-  if (!lastTrades.length) {
-    return '<div class="kt-empty">Nenhum trade recente</div>';
-  }
-  return lastTrades
-    .map(
-      (t) => `
-    <div class="kt-mini ${t.type}">
-      <span class="ttag ${t.type}-tag" style="font-size:9px">${t.type === 'buy' ? 'COMPRA' : 'VENDA'}</span>
-      <div>
-        <div style="font-weight:700;font-size:11px">${t.name || '?'} (${t.symbol || '?'})</div>
-        <div style="font-size:10px;color:var(--muted2)">${fmtFn(t.valUsd || 0)}</div>
-      </div>
-      <div style="font-size:9px;color:var(--muted)">${t._time || '—'}</div>
-    </div>`
-    )
-    .join('');
-}

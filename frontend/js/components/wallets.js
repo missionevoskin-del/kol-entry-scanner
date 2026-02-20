@@ -61,7 +61,6 @@ export function renderWallets(container, emptyEl, data, options = {}) {
         <td style="color:var(--muted2)">${k.trades}</td>
         <td style="color:var(--accent)">${fmt(k.vol24, cur, usdBRL)}</td>
         <td data-action="no-prop"><div class="ai"><span class="adot ${k.alertOn ? 'aon' : 'aoff'}"></span><span style="color:${k.alertOn ? 'var(--green)' : 'var(--muted)'}">${k.alertOn ? 'ON' : 'OFF'}</span></div></td>
-        <td data-action="no-prop"><button class="abtn" type="button" data-action="open-kol" data-id="${k.id}">VER</button></td>
       </tr>`;
     })
     .join('');
@@ -90,7 +89,6 @@ export function renderWalletsSkeleton(container, emptyEl, count = 8) {
       <td><span class="skeleton" style="width:50px"></span></td>
       <td><span class="skeleton" style="width:30px"></span></td>
       <td><span class="skeleton" style="width:50px"></span></td>
-      <td><span class="skeleton" style="width:40px"></span></td>
       <td><span class="skeleton" style="width:40px"></span></td>
     </tr>`
     )

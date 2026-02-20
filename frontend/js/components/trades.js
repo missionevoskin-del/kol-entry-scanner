@@ -28,11 +28,11 @@ export function getKolPositionForToken(allTrades, kol, ca) {
   const kolFull = kol.full || (kol.wallet && String(kol.wallet).length > 25 ? kol.wallet : null);
   if (!kolFull) return null;
 
-  const kolTrades = allTrades.filter(
-    (t) =>
-      t.ca === ca &&
-      (t.kol?.full === kolFull || (t.kol?.wallet && t.kol.wallet.length > 25 && t.kol.wallet === kolFull))
-  );
+  const kolTrades = allTrades.filter((t) => {
+    if (t.ca !== ca || !t.kol) return false;
+    const tFull = t.kol.full || (t.kol.wallet && String(t.kol.wallet).length > 25 ? t.kol.wallet : null);
+    return tFull && (tFull === kolFull || tFull.toLowerCase() === kolFull.toLowerCase());
+  });
   if (kolTrades.length < 1) return null;
 
   let totalBuy = 0;
@@ -50,12 +50,10 @@ export function getKolPositionForToken(allTrades, kol, ca) {
     currentMc = t.mc ?? t.marketCap ?? currentMc;
   }
 
-  if (totalBuy === 0) return null;
-
   const remainingCost = totalBuy - totalSell;
   if (remainingCost <= 0) {
-    const realizedApprox = totalSell - totalBuy;
-    return { holding: 0, pnl: realizedApprox, isOut: true };
+    const realizedPnl = totalBuy > 0 ? totalSell - totalBuy : null;
+    return { holding: 0, pnl: realizedPnl, isOut: true, insufficientData: totalBuy === 0 };
   }
   if (remainingCost > 0) {
     let pnl = 0;
@@ -83,13 +81,19 @@ export function renderTradeRow(tok, options = {}) {
 
   let posHtml = '';
   if (kolPosition) {
-    const pnlColor = kolPosition.pnl >= 0 ? 'var(--color-green)' : 'var(--color-red)';
-    const pnlSign = kolPosition.pnl >= 0 ? '+' : '';
-    if (kolPosition.isOut) {
-      posHtml = `<div class="tkolpos" title="PnL realizado ao zerar">Zerou · PnL ${pnlSign}${fmt(kolPosition.pnl, cur, usdBRL)}</div>`;
+    let pnlText = '';
+    if (kolPosition.pnl != null) {
+      const pnlColor = kolPosition.pnl >= 0 ? 'var(--color-green)' : 'var(--color-red)';
+      const pnlSign = kolPosition.pnl >= 0 ? '+' : '';
+      pnlText = kolPosition.isOut
+        ? `Zerou · PnL ${pnlSign}${fmt(kolPosition.pnl, cur, usdBRL)} (real.)`
+        : `Segura ${fmt(kolPosition.holding, cur, usdBRL)} · PnL <span style="color:${pnlColor}">${pnlSign}${fmt(kolPosition.pnl, cur, usdBRL)}</span>`;
     } else {
-      posHtml = `<div class="tkolpos" title="Posição atual do KOL">Segura ${fmt(kolPosition.holding, cur, usdBRL)} · PnL <span style="color:${pnlColor}">${pnlSign}${fmt(kolPosition.pnl, cur, usdBRL)}</span></div>`;
+      pnlText = kolPosition.insufficientData
+        ? 'Zerou · PnL — (compra não registrada)'
+        : 'Zerou · PnL —';
     }
+    posHtml = `<div class="tkolpos" title="${kolPosition.isOut ? 'PnL realizado' : 'Posição atual'}">${pnlText}</div>`;
   }
 
   return `
