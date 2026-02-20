@@ -51,13 +51,14 @@ export function renderKolLastTrades(kol, allTrades, hasHelius = true) {
  */
 export function renderKolLinks(kol) {
   const walletAddr = kol.full || (kol.wallet && kol.wallet.length > 25 ? kol.wallet : '');
-  const twitterHandle = (kol.twitter || kol.handle || '').replace(/^@/, '');
+  const twitterUrl = kol.twitterUrl || (kol.twitter ? `https://x.com/${(kol.twitter || '').replace(/^@/, '')}` : '');
+  const twitterLabel = kol.twitter ? `@${kol.twitter.replace(/^@/, '')}` : (kol.handle || '');
   const links = [
     { label: 'Solscan', url: `https://solscan.io/account/${walletAddr}`, icon: '🔍' },
     { label: 'GMGN', url: `https://gmgn.ai/sol/address/${walletAddr}`, icon: '📊' },
     { label: 'Birdeye', url: `https://birdeye.so/profile/${walletAddr}?chain=solana`, icon: '🦅' },
   ];
-  if (twitterHandle) links.push({ label: `@${twitterHandle}`, url: `https://x.com/${twitterHandle}`, icon: '𝕏' });
+  if (twitterUrl) links.push({ label: twitterLabel || 'X', url: twitterUrl, icon: '𝕏' });
   links.push({ label: 'Copiar', url: '#', icon: '⎘', copy: walletAddr });
   return links.map((l) =>
     l.copy

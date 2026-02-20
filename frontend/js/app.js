@@ -236,12 +236,14 @@ function mergeCustomWalletsIntoKols() {
 // ─── WALLETS ───────────────────────────────────────────────────────────
 function getFilteredAndSortedKols() {
   mergeCustomWalletsIntoKols();
-  let data = [...state.KOLS];
+  // Mostra só KOLs com Twitter (exceto wallets custom do usuário)
+  let data = state.KOLS.filter((k) => k.custom || k.twitter || k.twitterUrl);
   if (state.cFilter === 'custom') {
     data = data.filter((k) => k.custom);
   }
-  const byPnl = [...state.KOLS].sort((a, b) => (b.pnl ?? -1e9) - (a.pnl ?? -1e9) || (b.winRate ?? 0) - (a.winRate ?? 0));
-  const byWr = [...state.KOLS].sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0) || (b.pnl ?? -1e9) - (a.pnl ?? -1e9));
+  // Ordenação: positivos, negativos, sem histórico (evita lacunas)
+  const byPnl = [...data].sort((a, b) => (b.pnl ?? -1e9) - (a.pnl ?? -1e9) || (b.winRate ?? 0) - (a.winRate ?? 0));
+  const byWr = [...data].sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0) || (b.pnl ?? -1e9) - (a.pnl ?? -1e9));
   const rankPnlMap = new Map(byPnl.map((k, i) => [k.id, i + 1]));
   const rankWrMap = new Map(byWr.map((k, i) => [k.id, i + 1]));
   data = data.map((k) => ({
@@ -257,13 +259,20 @@ function getFilteredAndSortedKols() {
   else if (state.cFilter === 'pnlpos') data = data.filter((k) => (k.pnl ?? 0) > 0);
   else if (state.cFilter === 'alert') data = data.filter((k) => k.alertOn);
 
-  const va = state.sKey;
-  const vb = state.sDir;
+  // Ordenar: positivos (desc), negativos (menos negativo primeiro), sem histórico por último
   data.sort((a, b) => {
-    const x = a[va],
-      y = b[va];
-    if (typeof x === 'string') return vb * (x || '').localeCompare(y || '');
-    return vb * ((Number(x) || 0) - (Number(y) || 0));
+    const pa = a.pnl;
+    const pb = b.pnl;
+    const noHistA = a._noHistory || (pa === undefined || pa === null);
+    const noHistB = b._noHistory || (pb === undefined || pb === null);
+    if (noHistA && noHistB) return (a.name || '').localeCompare(b.name || '');
+    if (noHistA) return 1;
+    if (noHistB) return -1;
+    if (pa > 0 && pb > 0) return pb - pa;
+    if (pa < 0 && pb < 0) return pb - pa;
+    if (pa > 0 && pb <= 0) return -1;
+    if (pa <= 0 && pb > 0) return 1;
+    return (pb ?? -1e9) - (pa ?? -1e9);
   });
   return data;
 }
@@ -406,9 +415,9 @@ function attachShareCopyHandlers(tok, analysis) {
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────────
-function pushAlert(type, name, msg) {
+function pushAlert(type, name, msg, data) {
   const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  state.alerts.unshift({ type, name, msg, t });
+  state.alerts.unshift({ type, name, msg, t, data });
   if (state.alerts.length > 50) state.alerts.pop();
   state.unreadAlerts++;
   renderA();
@@ -1133,6 +1142,14 @@ init();
 // Expose for inline handlers that remain in HTML
 window.openKol = openKol;
 window.sw = switchTab;
+window.openTradeFromAlert = (alertIndex) => {
+  const a = state.alerts[alertIndex];
+  if (!a?.data) return;
+  const tabs = qsa('.tab');
+  const tradesTab = tabs?.[1];
+  if (tradesTab) switchTab('trades', tradesTab);
+  showTokDetail(a.data);
+};
 window.setCur = setCur;
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
