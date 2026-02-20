@@ -77,9 +77,10 @@ export function renderWallets(container, emptyEl, data, options = {}) {
           : pnlNum >= 0
             ? `<span class="pv${flashClass}">+${fmt(pnlNum, cur, usdBRL)}${pnlArrow}</span>`
             : `<span class="pnv${flashClass}">-${fmt(Math.abs(pnlNum), cur, usdBRL)}${pnlArrow}</span>`;
+      const wrClass = wr >= 65 ? 'wr-high' : wr >= 40 ? 'wr-mid' : 'wr-low';
       const wrCell = pnlLoading && !k._noHistory
         ? '<span class="spinner-inline"></span>—'
-        : `<span style="color:${wrColor}">${wr}%</span>`;
+        : `<div class="wr-wrap ${wrClass}"><div class="wr-bar"><div class="wr-fill" style="width:${Math.min(100, wr)}%"></div></div><span class="wr-pct">${wr}%</span></div>`;
       const rankDisplay = k.rankPnl <= 3 && k.rankPnl !== 999 ? `${RANK_MEDAL[k.rankPnl] || ''} #${k.rankPnl}` : (k.rankPnl === 999 ? '—' : `#${k.rankPnl}`);
       const hasShareData = (k.winRate != null && k.winRate !== undefined) || (k.pnl != null && k.pnl !== undefined);
       const rowClass = k.rankPnl <= 3 && k.rankPnl !== 999 ? ` rank-${k.rankPnl} tr-top3` : '';
@@ -101,9 +102,7 @@ export function renderWallets(container, emptyEl, data, options = {}) {
           ${pnlCell}
           <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${pnlLoading || k._noHistory ? '' : fmtSub(Math.abs(pnlNum), cur, usdBRL)}</div>
         </td>
-        <td>
-          <div class="wrw"><div class="wrbar"><div class="wrfill" style="width:${Math.min(100, wr)}%;background:${wrColor}"></div></div>${wrCell}</div>
-        </td>
+        <td>${wrCell}</td>
         <td style="color:var(--muted2)">${k.trades ?? '—'}</td>
         <td style="color:var(--accent)">${k.vol24 != null ? fmt(k.vol24, cur, usdBRL) : '—'}</td>
         <td data-action="stop"><div class="w-cell-actions"><button type="button" class="share-kol-btn w-share-btn" data-action="share-kol" data-id="${k.id}" title="Compartilhar no X">𝕏</button>${k.custom ? `<button type="button" class="w-remove-btn" data-action="remove-custom-wallet" data-address="${k.full || ''}" title="Remover">🗑️</button>` : ''}<button type="button" class="alert-toggle-btn ${k.alertOn ? 'alert-on' : 'alert-off'}" data-action="toggle-alert" data-id="${k.id}" title="${k.alertOn ? 'Desativar alerta' : 'Ativar alerta'}" aria-label="${k.alertOn ? 'Desativar alerta' : 'Ativar alerta'}">${k.alertOn ? '🔔' : '🔕'}</button></div></td>
