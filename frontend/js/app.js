@@ -286,6 +286,40 @@ function renderW() {
 }
 
 // ─── TRADES ───────────────────────────────────────────────────────────
+function handleBootstrapTrades(trades) {
+  const existingSigs = new Set(state.allTrades.map((t) => t.signature).filter(Boolean));
+  let added = 0;
+  trades.forEach((t) => {
+    if (!t.signature || existingSigs.has(t.signature)) return;
+    existingSigs.add(t.signature);
+    const enriched = {
+      ...t,
+      valUsd: t.valUsd ?? t.valor ?? 0,
+      mc: t.mc ?? t.marketCap ?? 0,
+      ca: t.ca ?? t.mint,
+      age: t.age ?? 'Agora',
+      holders: t.holders ?? 0,
+      taxB: t.taxB ?? 0,
+      taxS: t.taxS ?? 0,
+      renounced: t.renounced ?? null,
+      liqLocked: t.liqLocked ?? null,
+      aiAnalysis: t.aiAnalysis ?? null,
+    };
+    state.allTrades.unshift(enriched);
+    added++;
+  });
+  if (state.allTrades.length > 120) state.allTrades.length = 120;
+  state.tradeCnt = state.allTrades.length;
+  $('tBadge').textContent = state.tradeCnt;
+  state.lastWsMsgAt = Date.now();
+  if (added > 0) {
+    renderTradesFiltered();
+    $('tEmpty').style.display = 'none';
+    renderStats();
+    updateHeroCompactStats();
+  }
+}
+
 function addTrade(tok) {
   const enriched = {
     ...tok,
@@ -818,6 +852,7 @@ async function forceRefreshPnL() {
     const ok = await refreshPnL(periodMap[period] || 'daily');
     if (ok) await loadKolsWithPnL(period);
   } catch (e) {
+    showToast(e.message || 'Erro ao atualizar PnL', 'warn');
     console.warn('[PnL] Erro:', e.message);
   }
   if (btn) {
@@ -839,11 +874,15 @@ function setCur(c) {
 
 // ─── WEBSOCKET ────────────────────────────────────────────────────────
 let ws = null;
+let wsReconnectAttempts = 0;
+const WS_BASE_DELAY = 2000;
+const WS_MAX_DELAY = 60000;
 
 function connectWS() {
   try {
     ws = new WebSocket(WS_URL);
     ws.onopen = () => {
+      wsReconnectAttempts = 0;
       state.wsConnected = true;
       state.lastWsMsgAt = state.lastWsMsgAt || Date.now();
       state.lastFetchAt = state.lastFetchAt || Date.now();
@@ -858,6 +897,7 @@ function connectWS() {
         const msg = JSON.parse(ev.data);
         if (msg.type === 'trade' && msg.data) addTrade(msg.data);
         else if (msg.type === 'pnl_update' && msg.data) handlePnLUpdate(msg.data);
+        else if (msg.type === 'bootstrap' && msg.data?.trades?.length) handleBootstrapTrades(msg.data.trades);
       } catch (e) {}
     };
     ws.onclose = () => {
@@ -866,7 +906,9 @@ function connectWS() {
       $('wsDot')?.setAttribute('data-status', 'connecting');
       $('wsDot')?.classList.remove('ws-dot');
       updateWsTooltip();
-      setTimeout(connectWS, 3000);
+      const delay = Math.min(WS_BASE_DELAY * Math.pow(2, wsReconnectAttempts), WS_MAX_DELAY);
+      wsReconnectAttempts++;
+      setTimeout(connectWS, delay);
     };
     ws.onerror = () => {
       state.wsConnected = false;
@@ -884,11 +926,17 @@ function handlePnLUpdate(data) {
   state.lastWsMsgAt = Date.now();
   const { kols: updatedKols, period } = data;
   if (period && state.currentPeriod !== 'daily' && period !== state.currentPeriod) return;
-  const alertOnMap = {};
-  state.KOLS.forEach((k) => {
-    if (k.full) alertOnMap[k.full] = k.alertOn;
+  const byFull = new Map(state.KOLS.map((k) => [k.full || k.wallet, { ...k }]));
+  updatedKols.forEach((k) => {
+    const key = k.full || k.wallet;
+    const prev = byFull.get(key) || {};
+    byFull.set(key, {
+      ...k,
+      alertOn: prev.alertOn ?? k.alertOn,
+      custom: prev.custom ?? k.custom,
+    });
   });
-  state.KOLS = updatedKols.map((k) => ({ ...k, alertOn: alertOnMap[k.full] ?? k.alertOn }));
+  state.KOLS = Array.from(byFull.values());
   renderW();
   renderStats();
 }

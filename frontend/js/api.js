@@ -129,16 +129,19 @@ export async function fetchKolsPnL(period = 'daily') {
 }
 
 /**
- * Fallback: endpoint simples de KOLs
+ * Fallback: endpoint simples de KOLs (com retry)
  */
-export async function fetchKols() {
-  try {
-    const r = await fetch(`${API_BASE || ''}/api/kols`);
-    if (r.ok) {
-      const data = await r.json();
-      return data?.kols ?? (Array.isArray(data) ? data : []);
-    }
-  } catch (e) {}
+export async function fetchKols(retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const r = await fetch(`${API_BASE || ''}/api/kols`);
+      if (r.ok) {
+        const data = await r.json();
+        return data?.kols ?? (Array.isArray(data) ? data : []);
+      }
+    } catch (e) {}
+    if (i < retries - 1) await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+  }
   return null;
 }
 
@@ -166,21 +169,29 @@ export async function refreshPnL(period = 'daily') {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ period }),
     });
+    if (r.status === 429) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error || 'Aguarde antes de atualizar novamente');
+    }
     return r.ok;
-  } catch (e) {}
-  return false;
+  } catch (e) {
+    throw e;
+  }
 }
 
 /**
- * Busca últimos trades (persistidos + carregados no startup)
+ * Busca últimos trades (persistidos + carregados no startup) com retry
  */
-export async function fetchRecentTrades(limit = 120) {
-  try {
-    const r = await fetch(`${API_BASE || ''}/api/trades/recent?limit=${limit}`);
-    if (r.ok) {
-      const d = await r.json();
-      return d.trades || [];
-    }
-  } catch (e) {}
+export async function fetchRecentTrades(limit = 120, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const r = await fetch(`${API_BASE || ''}/api/trades/recent?limit=${limit}`);
+      if (r.ok) {
+        const d = await r.json();
+        return d.trades || [];
+      }
+    } catch (e) {}
+    if (i < retries - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
   return [];
 }

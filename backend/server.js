@@ -5,7 +5,7 @@
 const http = require('http');
 const app = require('./app');
 const { WebSocketServer } = require('ws');
-const { addTrade: persistTrade, getTrades, loadTrades } = require('./tradesStore');
+const { addTrade: persistTrade, getTrades, getRecentTrades, loadTrades } = require('./tradesStore');
 const helius = require('./helius');
 const pnlTracker = require('./pnlTracker');
 const { loadCache } = require('./txCache');
@@ -28,6 +28,11 @@ wsServer.on('connection', (ws) => {
   console.log('[ws] Cliente conectado');
   clients.add(ws);
   ws.send(JSON.stringify({ type: 'connected', timestamp: Date.now() }));
+  const recentTrades = getRecentTrades(120);
+  if (recentTrades.length > 0) {
+    ws.send(JSON.stringify({ type: 'bootstrap', data: { trades: recentTrades } }));
+    console.log('[ws] Bootstrap:', recentTrades.length, 'trades enviados');
+  }
   ws.on('close', () => { clients.delete(ws); });
   ws.on('error', (err) => { console.warn('[ws] Erro:', err.message); clients.delete(ws); });
 });

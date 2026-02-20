@@ -17,6 +17,7 @@ const POLL_INTERVALS = {
   TOP_5: 10 * 60 * 1000,      // 10 minutos
   MID_5: 20 * 60 * 1000,      // 20 minutos
   BOTTOM_5: 30 * 60 * 1000,   // 30 minutos
+  EXTRA_5: 45 * 60 * 1000,   // KOLs 16-20: 45 minutos
 };
 
 // Multiplicador para horário de baixa atividade (00h-06h)
@@ -27,6 +28,7 @@ let timers = {
   top5: null,
   mid5: null,
   bottom5: null,
+  extra5: null,
 };
 
 // Estatísticas de uso
@@ -68,6 +70,7 @@ function getKolsByTier() {
     top5: sorted.slice(0, 5),
     mid5: sorted.slice(5, 10),
     bottom5: sorted.slice(10, 15),
+    extra5: sorted.slice(15, 20),
     all: sorted,
   };
 }
@@ -158,6 +161,23 @@ function startBottom5Polling() {
 }
 
 /**
+ * Inicia polling para KOLs 16-20
+ */
+function startExtra5Polling() {
+  const poll = async () => {
+    const { extra5 } = getKolsByTier();
+    if (extra5.length === 0) {
+      timers.extra5 = setTimeout(poll, getAdjustedInterval(POLL_INTERVALS.EXTRA_5));
+      return;
+    }
+    await pollKolGroup(extra5, 'extra5');
+    const interval = getAdjustedInterval(POLL_INTERVALS.EXTRA_5);
+    timers.extra5 = setTimeout(poll, interval);
+  };
+  timers.extra5 = setTimeout(poll, 6 * 60 * 1000);
+}
+
+/**
  * Reset diário do contador de requests
  */
 function startDailyReset() {
@@ -191,6 +211,7 @@ function start(callback) {
   startTop5Polling();
   startMid5Polling();
   startBottom5Polling();
+  startExtra5Polling();
   startDailyReset();
   
   // Log de estatísticas a cada hora
@@ -207,7 +228,8 @@ function stop() {
   if (timers.top5) clearTimeout(timers.top5);
   if (timers.mid5) clearTimeout(timers.mid5);
   if (timers.bottom5) clearTimeout(timers.bottom5);
-  timers = { top5: null, mid5: null, bottom5: null };
+  if (timers.extra5) clearTimeout(timers.extra5);
+  timers = { top5: null, mid5: null, bottom5: null, extra5: null };
   console.log('[pnlTracker] Polling parado');
 }
 

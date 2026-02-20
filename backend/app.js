@@ -101,8 +101,17 @@ app.get('/api/kols/pnl', (req, res) => {
   }
 });
 
+const refreshPnlLastCall = { ts: 0 };
+const REFRESH_PNL_COOLDOWN_MS = 90 * 1000;
+
 app.post('/api/kols/refresh-pnl', async (req, res) => {
   try {
+    const now = Date.now();
+    if (now - refreshPnlLastCall.ts < REFRESH_PNL_COOLDOWN_MS) {
+      const waitSec = Math.ceil((REFRESH_PNL_COOLDOWN_MS - (now - refreshPnlLastCall.ts)) / 1000);
+      return res.status(429).json({ error: `Aguarde ${waitSec}s para novo refresh`, retryAfter: waitSec });
+    }
+    refreshPnlLastCall.ts = now;
     const period = (req.body.period || 'daily').toLowerCase();
     const p = ['daily', 'weekly', 'monthly'].includes(period) ? period : 'daily';
     const results = await forceRefreshAll(p);
@@ -161,7 +170,12 @@ app.get('/api/tracker/stats', (req, res) => {
     res.json({
       tracker: trackerStats,
       cache: cacheStats,
-      tiers: { top5: tiers.top5.map(k => k.name), mid5: tiers.mid5.map(k => k.name), bottom5: tiers.bottom5.map(k => k.name) },
+      tiers: {
+        top5: tiers.top5.map(k => k.name),
+        mid5: tiers.mid5.map(k => k.name),
+        bottom5: tiers.bottom5.map(k => k.name),
+        extra5: (tiers.extra5 || []).map(k => k.name),
+      },
       optimization: { plan: 'Helius Free', strategy: 'Polling escalonado', nightMode: trackerStats.isNightMode ? 'Ativo' : 'Inativo' },
     });
   } catch (e) {
