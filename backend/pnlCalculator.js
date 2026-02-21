@@ -22,6 +22,10 @@ const PERIODS = {
  * Busca todas as transações recentes para calcular PnL corretamente
  */
 async function fetchWalletHistory(walletAddr, limit = 50) {
+  // Helius desativado por padrão — HELIUS_ENABLED=1 para reativar
+  if (process.env.HELIUS_ENABLED !== '1' && process.env.HELIUS_ENABLED !== 'true') {
+    return [];
+  }
   const key = process.env.HELIUS_API_KEY;
   if (!key) {
     console.warn('[pnlCalc] HELIUS_API_KEY não configurada');

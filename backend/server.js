@@ -45,32 +45,38 @@ server.listen(PORT, '0.0.0.0', () => {
 
 loadCache();
 
-helius.start((trade) => {
-  persistTrade(trade);
-  broadcast({ type: 'trade', data: trade });
-});
+// Helius DESATIVADO por padrão — defina HELIUS_ENABLED=1 para reativar (evita gasto de API)
+const HELIUS_ENABLED = process.env.HELIUS_ENABLED === '1' || process.env.HELIUS_ENABLED === 'true';
 
-// Carrega últimos 5 trades por wallet em background (confiança ao abrir o site)
-loadTrades();
-const existingSigs = new Set((getTrades() || []).map((t) => t.signature).filter(Boolean));
-setTimeout(() => {
-  helius.loadRecentTradesForAllWallets((trade) => {
+if (HELIUS_ENABLED) {
+  helius.start((trade) => {
     persistTrade(trade);
     broadcast({ type: 'trade', data: trade });
-  }, existingSigs);
-}, 3000);
+  });
 
-pnlTracker.start((updatedKols, groupName, period) => {
-  pnlCache.invalidate(period || 'daily');
-  broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, period: period || 'daily', timestamp: Date.now() } });
-  console.log(`[server] PnL atualizado: ${updatedKols.length} KOLs (${groupName}, ${period || 'daily'})`);
-});
+  // Carrega últimos 5 trades por wallet em background
+  loadTrades();
+  const existingSigs = new Set((getTrades() || []).map((t) => t.signature).filter(Boolean));
+  setTimeout(() => {
+    helius.loadRecentTradesForAllWallets((trade) => {
+      persistTrade(trade);
+      broadcast({ type: 'trade', data: trade });
+    }, existingSigs);
+  }, 3000);
 
-console.log('[server] Sistema de polling escalonado iniciado');
+  pnlTracker.start((updatedKols, groupName, period) => {
+    pnlCache.invalidate(period || 'daily');
+    broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, period: period || 'daily', timestamp: Date.now() } });
+    console.log(`[server] PnL atualizado: ${updatedKols.length} KOLs (${groupName}, ${period || 'daily'})`);
+  });
+  console.log('[server] Sistema de polling escalonado iniciado');
+} else {
+  console.log('[server] Helius desativado — defina HELIUS_ENABLED=1 para reativar');
+}
 
 process.on('SIGINT', () => {
   console.log('[server] Encerrando...');
-  helius.stop();
+  if (HELIUS_ENABLED) helius.stop();
   pnlTracker.stop();
   server.close();
   wsServer.close();
