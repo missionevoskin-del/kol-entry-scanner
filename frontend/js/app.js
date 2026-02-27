@@ -51,7 +51,7 @@ const STORAGE_KEY_ALERTS = 'kolscan_alerts';
 const STORAGE_KEY_ALERTS_INIT = 'kolscan_alerts_initialized';
 const PNL_CACHE_KEY = 'kolscan_pnl_cache';
 const PNL_CACHE_MAX_AGE_MS = 4 * 60 * 60 * 1000; // 4h para usar como inicial
-const SITE_URL = 'https://kolbr-entry.up.railway.app';
+const SITE_URL = 'https://kolbr.up.railway.app';
 const opts = () => ({ cur: state.cur, usdBRL: state.usdBRL });
 
 // ─── DOM REFS (lazy) ─────────────────────────────────────────────────
@@ -553,7 +553,7 @@ function attachShareCopyHandlers(tok, analysis) {
   const fullText = aiBody.innerText || '';
   const sentences = fullText.split(/(?<=[.!?])\s+/).filter(Boolean);
   const firstTwo = sentences.slice(0, 2).join(' ').trim() || fullText.slice(0, 200);
-  const shareText = `${firstTwo}\n\n${SITE_URL} via @WeedzinxD #SolanaBR #CryptoBR`;
+  const shareText = `${firstTwo}\n\n${SITE_URL} via @kolbr_oficial #SolanaBR #CryptoBR`;
   if (shareBtn) {
     shareBtn.onclick = () => {
       const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
@@ -668,7 +668,7 @@ function shareKOL(kol) {
   if (kol.winRate != null && kol.winRate !== undefined) stats.push(`Win Rate: ${kol.winRate}%`);
   if (kol.pnl != null && kol.pnl !== undefined) stats.push(`PnL: ${fmt(kol.pnl, 'BRL', state.usdBRL)}`);
   if (stats.length) line1 += '\n' + stats.join(' | ');
-  const text = line1 + '\n\nMonitore os KOLs BR em tempo real 👇\n' + SITE_URL + '\nvia @WeedzinxD #SolanaBR #CryptoBR';
+  const text = line1 + '\n\nMonitore os KOLs BR em tempo real 👇\n' + SITE_URL + '\nvia @kolbr_oficial #SolanaBR #CryptoBR';
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   showToast('Abrindo X...');
 }
@@ -795,7 +795,7 @@ function showToast(msg, typeOrDuration = 'info') {
   if (!toast) return;
   const durationMs = typeof typeOrDuration === 'number' ? typeOrDuration : 3500;
   const type = typeof typeOrDuration === 'string' ? typeOrDuration : 'info';
-  const colors = { info: '#6abf7b', error: '#e05540', warn: '#c8a84b' };
+  const colors = { info: '#00ba7c', error: '#e05540', warn: '#c8a84b' };
   toast.style.borderLeft = `3px solid ${colors[type] || colors.info}`;
   toast.textContent = msg;
   toast.classList.add('show');

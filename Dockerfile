@@ -14,6 +14,7 @@ RUN npm install --omit=dev
 # Copiar código
 COPY backend/ backend/
 COPY frontend/ frontend/
+RUN mkdir -p data
 COPY data/ data/
 
 # Porta
