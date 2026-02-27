@@ -1,49 +1,42 @@
 /**
- * KOL Entry Scanner BR - Design Tokens
- * Sistema de design para consistência visual
+ * KOLBR - Design Tokens
+ * Visual limpo e profissional para o mercado BR
  */
 
 :root {
-  /* Cores base — dark profundo Solana 2026 */
-  --color-bg: #0a0e12;
-  --color-bg-2: #0d1218;
-  --color-surface: #0f161e;
-  --color-surface-2: #131c26;
-  --color-border: #1a2433;
-  --color-border-2: #243044;
+  /* Cores base — dark elegante */
+  --color-bg: #0f1419;
+  --color-bg-2: #151b23;
+  --color-surface: #1a222d;
+  --color-surface-2: #1e2733;
+  --color-border: #2d3748;
+  --color-border-2: #374151;
 
-  /* Neon Solana — acento principal */
-  --solana-neon: #00ff88;
-  --solana-neon-dim: #00cc6a;
-  --solana-neon-glow: rgba(0,255,136,0.4);
-  --solana-neon-subtle: rgba(0,255,136,0.12);
-
-  /* Cores cannabis (compat) */
-  --weed-green: #4a7c59;
-  --weed-green-light: #00ff88;
-  --weed-gold: #c8a84b;
-  --weed-purple: #6b4fa0;
-  --weed-smoke: rgba(0,255,136,0.06);
+  /* Acento Solana — verde profissional (menos neon) */
+  --solana-neon: #14b8a6;
+  --solana-neon-dim: #0d9488;
+  --solana-neon-glow: rgba(20,184,166,0.2);
+  --solana-neon-subtle: rgba(20,184,166,0.08);
 
   /* Cores semânticas */
   --color-accent: var(--solana-neon);
-  --color-green: #00ff88;
-  --color-red: #ff3b5c;
-  --color-yellow: #ffcc00;
-  --color-purple: #b06fff;
-  --color-orange: #ff7c40;
+  --color-green: #10b981;
+  --color-red: #ef4444;
+  --color-yellow: #f59e0b;
+  --color-purple: #8b5cf6;
+  --color-orange: #f97316;
 
   /* Texto */
-  --color-text: #ddeef8;
-  --color-text-muted: #3d6070;
-  --color-text-muted-2: #5a7d8f;
+  --color-text: #e8eaed;
+  --color-text-muted: #6b7280;
+  --color-text-muted-2: #9ca3af;
 
   /* Tipografia */
-  --font-mono: 'IBM Plex Mono', monospace;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
   --font-display: 'Bebas Neue', sans-serif;
   --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Espaçamento (escala 4px) */
+  /* Espaçamento */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 12px;
@@ -53,22 +46,21 @@
   --space-3xl: 48px;
 
   /* Bordas */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 8px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
-  /* Sombras + neon */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 0 24px var(--solana-neon-glow);
-  --shadow-neon: 0 0 20px var(--solana-neon-glow), 0 0 40px rgba(0,255,136,0.15);
+  /* Sombras sutis */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.3);
 
   /* Transições */
-  --transition-fast: 0.12s ease;
-  --transition-normal: 0.17s ease;
-  --transition-slow: 0.28s ease;
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.25s ease;
 
-  /* Aliases para compatibilidade */
+  /* Aliases */
   --bg: var(--color-bg);
   --bg2: var(--color-bg-2);
   --surface: var(--color-surface);

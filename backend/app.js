@@ -89,10 +89,12 @@ app.get('/api/status', (req, res) => {
   
   const isHeliusValid = heliusKey.length > 20 && !heliusKey.includes('sua_chave') && !heliusKey.includes('placeholder');
   const isOpenAIValid = openaiKey.length > 20 && !openaiKey.includes('sua_chave') && !openaiKey.includes('sk-proj-sua');
+  const hasAnalysis = isOpenAIValid;
   
   res.json({
     helius: isHeliusValid,
     openai: isOpenAIValid,
+    hasAnalysis,
     heliusEnabled: process.env.HELIUS_ENABLED === '1',
     solPrice: parseFloat(process.env.SOL_PRICE) || null,
     kols: getKols().length,

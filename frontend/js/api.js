@@ -75,16 +75,19 @@ export async function analyzeTokenAI(tokenPayload, kol, tradeType, customPrompt)
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         token: tokenPayload,
-        kol,
+        kol: kol || null,
         tradeType: tradeType || 'buy',
         customPrompt,
       }),
     });
-    if (r.ok) {
-      const d = await r.json();
-      if (d.veredito) return d;
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d?.veredito) return d;
+    if (!r.ok && d?.error) {
+      console.warn('[analyze]', r.status, d.error);
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[analyze] Erro de rede:', e.message);
+  }
   return null;
 }
 

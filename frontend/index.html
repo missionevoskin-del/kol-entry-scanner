@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="🌿 KOLBR — Siga o Smart Money Solana em Tempo Real">
 <meta name="twitter:description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
 <meta name="twitter:image" content="https://kolbr.up.railway.app/images/og-1200x630.svg">
-<meta name="theme-color" content="#0a0e12">
+<meta name="theme-color" content="#0f1419">
 <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
 <link rel="apple-touch-icon" href="images/favicon.svg">
 <link rel="manifest" href="manifest.json">
@@ -53,7 +53,7 @@
       <text x="7" y="19" font-family="'IBM Plex Mono',monospace" font-size="13" font-weight="700" fill="#6abf7b">K</text>
     </svg>
   </div>
-    <div><h1>KOLBR</h1><p>Powered by Helius + KOLBR Analyst 🌿</p></div>
+    <div><h1>KOLBR</h1><p>Smart Money Solana · Análise com ChatGPT</p></div>
   </div>
   <div class="trr">
     <!-- Indicador de modo -->
@@ -79,8 +79,8 @@
 <section class="hero-mega" aria-label="Hero">
   <div class="hero-mega-bg"></div>
   <div class="hero-mega-inner">
-    <h1 class="hero-title">KOLBR — Smart Money Solana</h1>
-    <p class="hero-subtitle">Monitore os melhores KOLs brasileiros em tempo real · PnL em Reais · Análise IA fine-tuned</p>
+    <h1 class="hero-title"><span>KOLBR</span> — Smart Money Solana</h1>
+    <p class="hero-subtitle">Monitore os melhores KOLs brasileiros em tempo real · PnL em Reais · Análise com ChatGPT</p>
     <a href="#tab-wallets" class="hero-cta" onclick="sw('wallets',document.querySelector('.tab'));document.getElementById('tab-wallets').scrollIntoView({behavior:'smooth'});return false;">VER WALLETS</a>
     <div class="hero-stats-row">
       <div class="hero-stat"><span class="hero-stat-val" id="heroWallets">22</span><span class="hero-stat-lbl">wallets</span></div>
@@ -202,11 +202,11 @@
     <span>·</span>
     <a href="https://kolbr.up.railway.app/" target="_blank" rel="noopener">kolbr.up.railway.app</a>
     <span>·</span>
-    <a href="https://huggingface.co/spaces/weedzin/kolbr-analyst-demo" target="_blank" rel="noopener" class="footer-powered">Powered by KOLBR Analyst — fine-tuned on Hugging Face</a>
+    <span class="footer-powered">Análise com ChatGPT · Feito para o Brasil 🇧🇷</span>
     <span>·</span>
     <span id="lastUpdate">—</span>
     <span>·</span>
-    <span id="footerVersion" style="color:rgba(106,191,123,0.3)">v1.0</span>
+    <span id="footerVersion" style="color:var(--muted2)">v1.0</span>
   </div>
 </footer>
 </div><!-- /wrap -->
@@ -216,7 +216,7 @@
   <div class="modal" onclick="event.stopPropagation()">
     <button class="mx" onclick="closeSettingsModal()" aria-label="Fechar">✕</button>
     <div class="mtitle">CONFIGURAÇÕES</div>
-    <div class="msub">Prompt IA usado no botão ANALISAR</div>
+    <div class="msub">Prompt usado no botão ANALISAR (ChatGPT)</div>
     <div class="mrow">
       <label>Instruções adicionais (opcional)</label>
       <textarea id="aiPrompt" rows="5" placeholder="Instruções opcionais (ex: priorize tokens &lt; $100k MC, desconfie de taxas &gt; 5%...)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px;outline:none;width:100%;resize:vertical;min-height:80px"></textarea>
@@ -289,7 +289,7 @@
   <div class="onboarding-card">
     <h3>Bem-vindo ao KOLBR 🚀</h3>
     <ol class="onboarding-steps">
-      <li><strong>1.</strong> Veja as wallets dos KOLs na tabela</li>
+      <li><strong>1.</strong> Veja as wallets dos KOLs nos cards</li>
       <li><strong>2.</strong> Clique em um trade para ver detalhes + análise IA</li>
       <li><strong>3.</strong> Ative alertas para ser notificado quando um KOL entrar</li>
     </ol>

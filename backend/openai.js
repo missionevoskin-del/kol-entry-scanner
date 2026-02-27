@@ -1,8 +1,7 @@
 /**
- * Análise de tokens - KOLBR Analyst (HF) com fallback para OpenAI GPT-4o-mini
+ * Análise de tokens - ChatGPT (GPT-4o-mini) via OpenAI
  */
 const axios = require('axios');
-const kolbrAnalyst = require('./kolbrAnalyst');
 
 const analysisCache = new Map();
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min por CA
@@ -27,7 +26,7 @@ function setCachedAnalysis(cacheKey, data) {
 }
 
 /**
- * Análise de token - tenta KOLBR Analyst (HF) primeiro, fallback para GPT-4o-mini
+ * Análise de token via ChatGPT (GPT-4o-mini)
  * Retorna JSON: { veredito, confianca, resumo, pontos_positivos, riscos }
  */
 async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
@@ -38,14 +37,6 @@ async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
   const cached = getCachedAnalysis(cacheKey);
   if (cached) return cached;
 
-  // 1) Tenta KOLBR Analyst (modelo fine-tuned) quando HF_KOLBR_MODEL + HF_TOKEN configurados
-  const kolbrResult = await kolbrAnalyst.analyzeToken(tokenData, kol, tradeType, customPrompt);
-  if (kolbrResult) {
-    setCachedAnalysis(cacheKey, kolbrResult);
-    return kolbrResult;
-  }
-
-  // 2) Fallback para OpenAI
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 

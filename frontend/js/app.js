@@ -41,6 +41,7 @@ let state = {
   lastWsMsgAt: null,
   hasHelius: false,
   hasOpenAI: false,
+  hasAnalysis: false,
   apiMode: 'checking', // 'checking', 'demo', 'real', 'error'
 };
 const ONBOARDING_KEY = 'kolscan_onboarding_seen';
@@ -475,7 +476,7 @@ async function showTokDetail(tok) {
   _currentTok = tok;
   const kolPosition = getKolPositionForToken(state.allTrades, tok.kol, tok.ca);
   const container = $('tokDetail');
-  container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition });
+  container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition, hasAnalysis: state.hasAnalysis });
   attachAIBtnHandler(tok);
   enrichFromDex(tok);
 }
@@ -494,7 +495,7 @@ async function enrichFromDex(tok) {
     const container = $('tokDetail');
     if (container) {
       const kolPosition = getKolPositionForToken(state.allTrades, tok.kol, tok.ca);
-      container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition });
+      container.innerHTML = renderTokenDetail(tok, { ...opts(), kolPosition, hasAnalysis: state.hasAnalysis });
       attachAIBtnHandler(tok);
     }
   }
@@ -509,7 +510,7 @@ function attachAIBtnHandler(tok) {
     runBtn.disabled = true;
     runBtn.textContent = '⏳ Analisando...';
     aiBody.className = 'ai-body loading';
-    aiBody.innerHTML = '<div class="ai-skeleton ai-skeleton-premium"><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div></div><span class="ai-loading-msg">KOLBR Analyst analisando com IA fine-tuned...</span>';
+    aiBody.innerHTML = '<div class="ai-skeleton ai-skeleton-premium"><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div></div><span class="ai-loading-msg">Analisando com ChatGPT...</span>';
     const tokenPayload = {
       ca: tok.ca,
       name: tok.name,
@@ -524,10 +525,16 @@ function attachAIBtnHandler(tok) {
     const customPrompt = getFullAIPrompt();
     const result = await analyzeTokenAI(tokenPayload, tok.kol, tok.type, customPrompt);
     runBtn.disabled = false;
-    runBtn.textContent = '🤖 Analisar';
+    runBtn.textContent = (tok.aiAnalysis ? 'RE-ANALISAR' : '🤖 ANALISAR');
     if (!result) {
       aiBody.className = 'ai-body ready';
-      aiBody.textContent = 'Erro ao analisar. Tente novamente.';
+      aiBody.innerHTML = '<div class="ai-error-msg">Erro ao analisar. Verifique se <strong>OPENAI_API_KEY</strong> está configurado no backend.</div>';
+      return;
+    }
+    const isFallback = result.confianca === 0 && (result.resumo || '').includes('Análise indisponível');
+    if (isFallback) {
+      aiBody.className = 'ai-body ready';
+      aiBody.innerHTML = '<div class="ai-error-msg">Análise indisponível. Configure <strong>OPENAI_API_KEY</strong> no backend (.env) para ativar análise com ChatGPT.</div>';
       return;
     }
     tok.aiAnalysis = result;
@@ -1246,6 +1253,7 @@ async function init() {
   const apiStatus = await fetchApiStatus();
   state.hasHelius = !!apiStatus.helius;
   state.hasOpenAI = !!apiStatus.openai;
+  state.hasAnalysis = !!apiStatus.hasAnalysis;
   
   // Usa o preço do SOL do backend se disponível, caso contrário busca via CoinGecko
   if (apiStatus.solPrice) {

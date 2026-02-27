@@ -33,7 +33,7 @@ export function formatAIBody(ai) {
  * Ownership/Tax/Holders/Score removidos — não fornecidos pelo DexScreener
  */
 export function renderTokenDetail(tok, options = {}) {
-  const { cur, usdBRL, kolPosition } = options;
+  const { cur, usdBRL, kolPosition, hasAnalysis = true } = options;
   const chg = parseFloat(tok.change) || 0;
   const chgC = chg >= 0 ? 'var(--color-green)' : 'var(--color-red)';
   const logoHtml = tok.imageUrl
@@ -101,12 +101,12 @@ export function renderTokenDetail(tok, options = {}) {
     </div>
     <div class="ai-box" id="aiBox">
       <div class="ai-hdr">
-        <div class="ai-title">🤖 KOLBR Analyst</div>
+        <div class="ai-title">🤖 Análise com ChatGPT</div>
         <button type="button" class="btn bp neon bsm" id="aiBtn">${tok.aiAnalysis ? 'RE-ANALISAR' : '🤖 ANALISAR'}</button>
       </div>
-      <div class="ai-body ${tok.aiAnalysis ? 'ready' : ''}" id="aiBody">${formatAIBody(tok.aiAnalysis) || 'Clique em ANALISAR para gerar análise com IA'}</div>
+      <div class="ai-body ${tok.aiAnalysis ? 'ready' : ''}" id="aiBody">${formatAIBody(tok.aiAnalysis) || (hasAnalysis ? 'Clique em ANALISAR para gerar análise com ChatGPT' : '<div class="ai-error-msg">Configure <strong>OPENAI_API_KEY</strong> no backend (.env) para ativar análise com ChatGPT.</div>')}</div>
       ${tok.aiAnalysis ? '<div class="analysis-actions"><button type="button" class="btn bsm" id="aiShareBtn" title="Compartilhar no X">𝕏 Compartilhar</button><button type="button" class="btn bsm" id="aiCopyBtn" title="Copiar">📋 Copiar</button></div>' : ''}
-      ${tok.aiAnalysis ? '<small class="ai-watermark">Análise: kolbr-entry.up.railway.app</small>' : ''}
+      ${tok.aiAnalysis ? '<small class="ai-watermark">Análise com ChatGPT</small>' : ''}
     </div>`;
 }
 

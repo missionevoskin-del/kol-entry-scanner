@@ -1,5 +1,5 @@
 /**
- * KOL Entry Scanner BR - Estilos globais
+ * KOLBR - Estilos globais
  */
 
 * {
@@ -9,15 +9,16 @@
 }
 
 body {
-  background: #0a0e12;
+  background: #0f1419;
   color: var(--color-text);
   font-family: var(--font-sans);
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: rgba(0,255,136,0.25);
+  background: rgba(20,184,166,0.2);
   color: #e8eaed;
 }
 
@@ -27,45 +28,26 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 15 C40 15 46 21 44 27 C43 24 40 24 40 24 C40 24 43 29 41 33 C40 30 37 30 37 30 C38 32 37 35 35 36 C36 33 35 30 35 30 L35 44 L37 44 L37 46 L33 46 L33 44 L35 44 L35 30 C35 30 33 33 32 36 C30 35 29 32 30 30 C30 30 27 30 26 33 C24 29 27 24 27 24 C27 24 24 24 23 27 C21 21 26 15 26 15 C26 15 28 20 31 20 C33 18 37 15 40 15Z' fill='%2300ff88' opacity='0.04'/%3E%3C/svg%3E");
-  background-size: 80px 80px;
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(20,184,166,0.06) 0%, transparent 50%);
 }
 
-.glc {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 55vw;
-  height: 55vh;
-  background: radial-gradient(ellipse at top left, rgba(0,255,136,0.08) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.glr {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  width: 45vw;
-  height: 45vh;
-  background: radial-gradient(ellipse at bottom right, rgba(0,255,136,0.04) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
+.glc, .glr {
+  display: none;
 }
 
 .wrap {
   position: relative;
   z-index: 1;
-  max-width: 1440px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 16px 70px;
+  padding: 0 20px 60px;
 }
 
 .app-footer {
   text-align: center;
-  padding: 12px 16px;
+  padding: 16px 20px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted-2);
   border-top: 1px solid var(--color-border);
 }
@@ -75,13 +57,11 @@ body::before {
 }
 .app-footer a:hover {
   color: var(--color-accent);
-  text-decoration: underline;
 }
-.app-footer .footer-powered { color: rgba(0,255,136,0.85);}
-.app-footer .footer-powered:hover { color: #00ff88; text-shadow: 0 0 12px rgba(0,255,136,0.4); }
-.app-footer span { margin: 0 4px; }
+.app-footer .footer-powered { color: var(--color-green); }
+.app-footer span { margin: 0 6px; }
 
-/* Utilidades de cor */
+/* Utilidades */
 .color-positive { color: var(--color-green); }
 .color-negative { color: var(--color-red); }
 .color-accent { color: var(--color-accent); }
@@ -89,11 +69,11 @@ body::before {
 .color-purple { color: var(--color-purple); }
 .color-muted { color: var(--color-text-muted-2); }
 
-/* Skeleton loaders */
+/* Skeleton */
 .skeleton {
   display: inline-block;
   height: 1em;
-  background: linear-gradient(90deg, var(--color-border-2) 25%, rgba(0,255,136,0.2) 50%, var(--color-border-2) 75%);
+  background: linear-gradient(90deg, var(--color-border-2) 25%, rgba(20,184,166,0.15) 50%, var(--color-border-2) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);
@@ -121,10 +101,6 @@ body::before {
   to { transform: rotate(360deg); }
 }
 
-/* ── MOBILE GLOBAL ── */
 @media (max-width: 768px) {
-  .wrap { padding: 0 12px 60px; }
-}
-@media (max-width: 480px) {
-  .wrap { padding: 0 10px 50px; }
+  .wrap { padding: 0 16px 50px; }
 }
