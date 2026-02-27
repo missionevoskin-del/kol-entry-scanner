@@ -74,8 +74,9 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.get('/api/trades/recent', (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit, 10) || 120, 200);
-    const trades = getRecentTrades(limit);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 60, 200);
+    const hours = parseInt(req.query.hours, 10) || 24;
+    const trades = getRecentTrades(limit, hours);
     res.json({ trades, count: trades.length });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -83,12 +84,11 @@ app.get('/api/trades/recent', (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-  // Verifica se as chaves são válidas (não são placeholders)
   const heliusKey = process.env.HELIUS_API_KEY || '';
-  const openaiKey = process.env.OPENAI_API_KEY || '';
+  const openaiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '';
   
   const isHeliusValid = heliusKey.length > 20 && !heliusKey.includes('sua_chave') && !heliusKey.includes('placeholder');
-  const isOpenAIValid = openaiKey.length > 20 && !openaiKey.includes('sua_chave') && !openaiKey.includes('sk-proj-sua');
+  const isOpenAIValid = openaiKey.length > 10 && !openaiKey.includes('sua_chave') && !openaiKey.includes('sk-proj-sua') && !openaiKey.includes('your-key');
   const hasAnalysis = isOpenAIValid;
   
   res.json({

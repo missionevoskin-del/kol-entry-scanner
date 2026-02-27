@@ -1280,11 +1280,16 @@ async function init() {
 
   const tEmptyMsg = $('tEmptyMsg');
   const tEmptySub = $('tEmptySub');
-  const cached = getPnlCache('daily');
+  const cachedWeekly = getPnlCache('weekly');
+  const cachedDaily = getPnlCache('daily');
+  const cached = cachedWeekly || cachedDaily;
   if (cached?.kols?.length) {
     state.KOLS = cached.kols;
     state.lastFetchAt = cached.cachedAt || Date.now();
+    state.currentPeriod = cachedWeekly ? 'weekly' : 'daily';
     initDefaultAlerts(state.KOLS);
+    const pFil = $('pFil');
+    if (pFil) pFil.value = state.currentPeriod === 'weekly' ? 'W' : 'D';
     renderW();
     renderStats();
     if (tEmptyMsg) tEmptyMsg.textContent = 'Atualizando dados...';
@@ -1293,7 +1298,8 @@ async function init() {
     if (tEmptyMsg) tEmptyMsg.textContent = 'Buscando as 22 wallets dos KOLs... isso leva ~5s';
   }
 
-  let kols = await fetchKolsPnL('daily');
+  let kols = await fetchKolsPnL('weekly');
+  if (!kols?.length) kols = await fetchKolsPnL('daily');
   if (!kols?.length) kols = await fetchKols();
   if (kols?.length) {
     const alertOnMap = {};
@@ -1301,8 +1307,11 @@ async function init() {
     state.KOLS = kols.map((k) => ({ ...k, alertOn: alertOnMap[k.full] ?? k.alertOn }));
     initDefaultAlerts(state.KOLS);
     state.lastFetchAt = Date.now();
-    savePnlCache('daily', kols);
-    console.log('[init]', state.KOLS.length, 'KOLs carregados');
+    state.currentPeriod = 'weekly';
+    savePnlCache('weekly', kols);
+    const pFil = $('pFil');
+    if (pFil) pFil.value = 'W';
+    console.log('[init]', state.KOLS.length, 'KOLs carregados (7 dias)');
   } else if (!cached?.kols?.length) {
     console.warn('[init] Nenhum KOL carregado');
     $('liveLabel').textContent = 'ERRO API';
@@ -1312,7 +1321,7 @@ async function init() {
   if (tEmptyMsg) tEmptyMsg.textContent = 'Carregando trades recentes...';
   if (tEmptySub) tEmptySub.textContent = '';
 
-  const recentTrades = await fetchRecentTrades(120);
+  const recentTrades = await fetchRecentTrades(60, 24);
   if (recentTrades?.length) {
     state.allTrades = recentTrades.map((t) => ({
       ...t,

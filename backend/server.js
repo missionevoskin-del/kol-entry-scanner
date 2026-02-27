@@ -29,7 +29,7 @@ wsServer.on('connection', (ws) => {
   console.log('[ws] Cliente conectado');
   clients.add(ws);
   ws.send(JSON.stringify({ type: 'connected', timestamp: Date.now() }));
-  const recentTrades = getRecentTrades(120);
+  const recentTrades = getRecentTrades(60, 24);
   if (recentTrades.length > 0) {
     ws.send(JSON.stringify({ type: 'bootstrap', data: { trades: recentTrades } }));
     console.log('[ws] Bootstrap:', recentTrades.length, 'trades enviados');

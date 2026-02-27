@@ -37,8 +37,8 @@ async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
   const cached = getCachedAnalysis(cacheKey);
   if (cached) return cached;
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+  const apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
+  if (!apiKey || apiKey.length < 10) return null;
 
   const basePrompt = `Você é um analista sênior de criptoativos, especializado em memecoins e tokens emergentes na Solana. Sua análise é usada por traders brasileiros para decisões rápidas.
 

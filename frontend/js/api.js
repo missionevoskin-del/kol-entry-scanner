@@ -185,10 +185,10 @@ export async function refreshPnL(period = 'daily') {
 /**
  * Busca últimos trades (persistidos + carregados no startup) com retry
  */
-export async function fetchRecentTrades(limit = 120, retries = 3) {
+export async function fetchRecentTrades(limit = 60, hours = 24, retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
-      const r = await fetch(`${API_BASE || ''}/api/trades/recent?limit=${limit}`);
+      const r = await fetch(`${API_BASE || ''}/api/trades/recent?limit=${limit}&hours=${hours}`);
       if (r.ok) {
         const d = await r.json();
         return d.trades || [];

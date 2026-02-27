@@ -47,9 +47,11 @@ function getTrades() {
   return trades;
 }
 
-function getRecentTrades(limit = 120) {
+function getRecentTrades(limit = 120, maxAgeHours = 24) {
   if (trades.length === 0) loadTrades();
-  return trades.slice(0, limit);
+  const cutoff = Date.now() - (maxAgeHours * 60 * 60 * 1000);
+  const filtered = trades.filter((t) => (t._ts || t.timestamp || 0) >= cutoff);
+  return filtered.slice(0, limit);
 }
 
 module.exports = { addTrade, getTrades, getRecentTrades, loadTrades };
