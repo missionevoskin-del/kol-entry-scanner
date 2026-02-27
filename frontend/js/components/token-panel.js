@@ -5,17 +5,26 @@
 import { fmt, fmtMC } from '../utils/format.js';
 
 /**
- * Formata corpo da análise IA
+ * Formata corpo da análise IA — layout premium
  */
 export function formatAIBody(ai) {
   if (!ai) return null;
   if (typeof ai === 'string') return ai.replace(/\n/g, '<br>');
   const v = (ai.veredito || 'NEUTRO').toUpperCase();
   const cls = v.includes('COMPRA') ? 'buy' : v.includes('EVITAR') ? 'sell' : 'neutral';
-  let html = `<span class="ai-score ai-score--${cls}">${v}</span> (confiança: ${ai.confianca || 5}/10)<br><br>${(ai.resumo || '').replace(/\n/g, '<br>')}`;
-  if (ai.pontos_positivos?.length) html += `<br><strong>Pontos positivos:</strong> ${ai.pontos_positivos.join(', ')}`;
-  if (ai.riscos?.length) html += `<br><strong>Riscos:</strong> ${ai.riscos.join(', ')}`;
-  return html;
+  const conf = Math.min(10, Math.max(1, parseInt(ai.confianca, 10) || 5));
+  const confPct = conf * 10;
+  const pos = ai.pontos_positivos || [];
+  const riscos = ai.riscos || [];
+  let html = `
+    <div class="ai-veredito ai-veredito--${cls}">${v}</div>
+    <div class="ai-conf-bar"><div class="ai-conf-fill" style="width:${confPct}%"></div></div>
+    <div class="ai-conf-label">Confiança: ${conf}/10</div>
+    <div class="ai-resumo">${(ai.resumo || '').replace(/\n/g, '<br>')}</div>
+    ${pos.length ? `<div class="ai-section"><span class="ai-section-icon">✓</span><strong>Pontos positivos</strong><ul>${pos.map(p=>`<li>${p}</li>`).join('')}</ul></div>` : ''}
+    ${riscos.length ? `<div class="ai-section ai-section--risks"><span class="ai-section-icon">⚠</span><strong>Riscos</strong><ul>${riscos.map(r=>`<li>${r}</li>`).join('')}</ul></div>` : ''}
+  `;
+  return html.trim();
 }
 
 /**
@@ -95,7 +104,7 @@ export function renderTokenDetail(tok, options = {}) {
         <div class="ai-title">🤖 KOLBR Analyst</div>
         <button type="button" class="btn bp neon bsm" id="aiBtn">${tok.aiAnalysis ? 'RE-ANALISAR' : '🤖 ANALISAR'}</button>
       </div>
-      <div class="ai-body" id="aiBody">${formatAIBody(tok.aiAnalysis) || 'Clique em ANALISAR para gerar análise com IA'}</div>
+      <div class="ai-body ${tok.aiAnalysis ? 'ready' : ''}" id="aiBody">${formatAIBody(tok.aiAnalysis) || 'Clique em ANALISAR para gerar análise com IA'}</div>
       ${tok.aiAnalysis ? '<div class="analysis-actions"><button type="button" class="btn bsm" id="aiShareBtn" title="Compartilhar no X">𝕏 Compartilhar</button><button type="button" class="btn bsm" id="aiCopyBtn" title="Copiar">📋 Copiar</button></div>' : ''}
       ${tok.aiAnalysis ? '<small class="ai-watermark">Análise: kolbr-entry.up.railway.app</small>' : ''}
     </div>`;

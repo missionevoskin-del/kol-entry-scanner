@@ -231,8 +231,10 @@ function updateHeroCompactStats() {
   const wEl = $('heroWallets');
   const tEl = $('heroTrades');
   const lEl = $('heroLastEntry');
-  if (wEl) wEl.textContent = state.KOLS.length || '—';
-  if (tEl) tEl.textContent = state.tradeCnt > 0 ? state.tradeCnt : '—';
+  const wVal = state.KOLS.length || '—';
+  const tVal = state.tradeCnt > 0 ? state.tradeCnt : '—';
+  if (wEl) { wEl.textContent = wVal; }
+  if (tEl) { tEl.textContent = tVal; }
   if (lEl) {
     const last = state.allTrades[0];
     if (last && state.lastWsMsgAt) {
@@ -392,7 +394,7 @@ const lastPnlMap = {};
 function renderW() {
   const data = getFilteredAndSortedKols();
   const options = { ...opts(), prevPnl: { ...lastPnlMap } };
-  renderWallets($('wBody'), $('emptyW'), data, options);
+  renderWallets($('wCards'), $('emptyW'), data, options);
   data.forEach((k) => { if (k.pnl != null) lastPnlMap[k.id] = k.pnl; });
   renderStats();
 }
@@ -507,7 +509,7 @@ function attachAIBtnHandler(tok) {
     runBtn.disabled = true;
     runBtn.textContent = '⏳ Analisando...';
     aiBody.className = 'ai-body loading';
-    aiBody.innerHTML = '<div class="ai-skeleton"><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div></div><span style="font-size:9px;color:var(--muted)">KOLBR Analyst analisando...</span>';
+    aiBody.innerHTML = '<div class="ai-skeleton ai-skeleton-premium"><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div></div><span class="ai-loading-msg">KOLBR Analyst analisando com IA fine-tuned...</span>';
     const tokenPayload = {
       ca: tok.ca,
       name: tok.name,
@@ -524,7 +526,7 @@ function attachAIBtnHandler(tok) {
     runBtn.disabled = false;
     runBtn.textContent = '🤖 Analisar';
     if (!result) {
-      aiBody.className = 'ai-body';
+      aiBody.className = 'ai-body ready';
       aiBody.textContent = 'Erro ao analisar. Tente novamente.';
       return;
     }
@@ -1279,7 +1281,7 @@ async function init() {
     renderStats();
     if (tEmptyMsg) tEmptyMsg.textContent = 'Atualizando dados...';
   } else {
-    renderWalletsSkeleton($('wBody'), $('emptyW'));
+    renderWalletsSkeleton($('wCards'), $('emptyW'));
     if (tEmptyMsg) tEmptyMsg.textContent = 'Buscando as 22 wallets dos KOLs... isso leva ~5s';
   }
 

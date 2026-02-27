@@ -9,8 +9,8 @@
 <!-- Open Graph -->
 <meta property="og:title" content="🌿 KOLBR — Siga o Smart Money Solana em Tempo Real">
 <meta property="og:description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
-<meta property="og:url" content="https://kolbr-entry.up.railway.app/">
-<meta property="og:image" content="https://kolbr-entry.up.railway.app/images/og-1200x630.svg">
+<meta property="og:url" content="https://kolbr.up.railway.app/">
+<meta property="og:image" content="https://kolbr.up.railway.app/images/og-1200x630.svg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:type" content="website">
@@ -20,7 +20,7 @@
 <meta name="twitter:site" content="@WeedzinxD">
 <meta name="twitter:title" content="🌿 KOLBR — Siga o Smart Money Solana em Tempo Real">
 <meta name="twitter:description" content="Monitore 22 wallets de KOLs brasileiros de Solana. PnL em Reais, análise IA em PT-BR e alertas instantâneos. Grátis.">
-<meta name="twitter:image" content="https://kolbr-entry.up.railway.app/images/og-1200x630.svg">
+<meta name="twitter:image" content="https://kolbr.up.railway.app/images/og-1200x630.svg">
 <meta name="theme-color" content="#0a0e12">
 <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
 <link rel="apple-touch-icon" href="images/favicon.svg">
@@ -75,44 +75,33 @@
 </div>
 </header>
 
-<!-- HERO PREMIUM -->
-<section class="hero-compact hero-premium" aria-label="Status">
-  <div class="hero-compact-inner">
-    <div class="hero-compact-title">
-      <span class="hct-label hct-neon">KOLBR</span>
-      <span class="hct-sep">—</span>
-      <span class="hct-sub">Smart Money Solana BR · Análise IA em tempo real</span>
-    </div>
-    <div class="hero-compact-stats hero-stats-neon">
-      <div class="hcs-item">
-        <span class="hcs-val hcs-neon" id="heroWallets">22</span>
-        <span class="hcs-lbl">wallets</span>
-      </div>
-      <div class="hcs-sep">·</div>
-      <div class="hcs-item">
-        <span class="hcs-val hcs-neon" id="heroTrades">—</span>
-        <span class="hcs-lbl">trades</span>
-      </div>
-      <div class="hcs-sep">·</div>
-      <div class="hcs-item">
-        <span class="hcs-val hcs-neon" id="heroLastEntry">—</span>
-        <span class="hcs-lbl">última entrada</span>
-      </div>
+<!-- HERO GIGANTE NEON -->
+<section class="hero-mega" aria-label="Hero">
+  <div class="hero-mega-bg"></div>
+  <div class="hero-mega-inner">
+    <h1 class="hero-title">KOLBR — Smart Money Solana</h1>
+    <p class="hero-subtitle">Monitore os melhores KOLs brasileiros em tempo real · PnL em Reais · Análise IA fine-tuned</p>
+    <a href="#tab-wallets" class="hero-cta" onclick="sw('wallets',document.querySelector('.tab'));document.getElementById('tab-wallets').scrollIntoView({behavior:'smooth'});return false;">VER WALLETS</a>
+    <div class="hero-stats-row">
+      <div class="hero-stat"><span class="hero-stat-val" id="heroWallets">22</span><span class="hero-stat-lbl">wallets</span></div>
+      <div class="hero-stat"><span class="hero-stat-val" id="heroTrades">—</span><span class="hero-stat-lbl">trades</span></div>
+      <div class="hero-stat"><span class="hero-stat-val" id="heroLastEntry">—</span><span class="hero-stat-lbl">última entrada</span></div>
     </div>
   </div>
 </section>
 
 <main role="main">
-<!-- STATS -->
-<div class="stats">
-  <div class="stat s1"><div class="slbl">Wallets</div><div class="sval ca" id="stW">0</div></div>
+<!-- STATS CARDS GLASSMORPHIC -->
+<div class="stats stats-premium">
+  <div class="stat s1"><div class="stat-icon">👛</div><div class="slbl">Wallets</div><div class="sval ca" id="stW">0</div></div>
   <div class="stat s2">
+    <div class="stat-icon">📈</div>
     <div class="slbl">PNL TOTAL <span class="pnl-period-badge" id="pnlPeriodBadge">DIÁRIO</span></div>
     <div class="sval" id="stP">—</div>
     <div class="ssub" id="stPs">Aguardando dados...</div>
   </div>
-  <div class="stat s3"><div class="slbl">Trades ao Vivo</div><div class="sval cy" id="stT">0</div></div>
-  <div class="stat s4"><div class="slbl">Alertas Ativos</div><div class="sval cp" id="stA">0</div></div>
+  <div class="stat s3"><div class="stat-icon">⚡</div><div class="slbl">Trades ao Vivo</div><div class="sval cy" id="stT">0</div></div>
+  <div class="stat s4"><div class="stat-icon">🔔</div><div class="slbl">Alertas Ativos</div><div class="sval cp" id="stA">0</div></div>
 </div>
 
 <nav class="tabs" role="navigation" aria-label="Abas principais">
@@ -138,14 +127,8 @@
     <button class="chip" onclick="setF('alert',this)">Alerta ON</button>
     <button class="chip" onclick="setF('custom',this)">👤 Minhas Wallets</button>
   </div>
-  <div class="twrap">
-    <div class="wallets-table-view">
-    <table role="table" aria-label="Tabela de KOL Wallets">
-      <thead><tr><th onclick="sb('rankPnl')">RANK↕</th><th onclick="sb('name')">KOL↕</th><th>WALLET</th><th onclick="sb('pnl')"><span>PnL↕</span><span class="th-tip" title="Lucro ou prejuízo em R$ ou USD" onclick="event.stopPropagation()">?</span></th><th onclick="sb('winRate')"><span>WIN RATE↕</span><span class="th-tip" title="Porcentagem de trades lucrativos" onclick="event.stopPropagation()">?</span></th><th onclick="sb('trades')">TRADES↕</th><th><span>VOL 24H</span><span class="th-tip" title="Volume negociado nas últimas 24h" onclick="event.stopPropagation()">?</span></th><th>ALERTA</th></tr></thead>
-      <tbody id="wBody"></tbody>
-    </table>
-    </div>
-    <div class="wallets-card-view" id="wCards"></div>
+  <div class="wallets-grid-wrap">
+    <div class="wallets-grid" id="wCards"></div>
     <div id="emptyW" class="empty empty-wallets" style="display:none" hidden aria-live="polite" aria-hidden="true">
       <div class="empty-w-icon">📭</div>
       <h3 class="empty-w-title">Nenhuma wallet encontrada com esses filtros</h3>
@@ -217,7 +200,7 @@
     <span>·</span>
     <a href="https://x.com/WeedzinxD" target="_blank" rel="noopener">@WeedzinxD</a>
     <span>·</span>
-    <a href="https://kolbr-entry.up.railway.app/" target="_blank" rel="noopener">kolbr-entry.up.railway.app</a>
+    <a href="https://kolbr.up.railway.app/" target="_blank" rel="noopener">kolbr.up.railway.app</a>
     <span>·</span>
     <a href="https://huggingface.co/spaces/weedzin/kolbr-analyst-demo" target="_blank" rel="noopener" class="footer-powered">Powered by KOLBR Analyst — fine-tuned on Hugging Face</a>
     <span>·</span>
