@@ -528,13 +528,13 @@ function attachAIBtnHandler(tok) {
     runBtn.textContent = (tok.aiAnalysis ? 'RE-ANALISAR' : '🤖 ANALISAR');
     if (!result) {
       aiBody.className = 'ai-body ready';
-      aiBody.innerHTML = '<div class="ai-error-msg">Erro ao analisar. Verifique se <strong>OPENAI_API_KEY</strong> está configurado no backend.</div>';
+      aiBody.innerHTML = '<div class="ai-error-msg">Erro ao analisar. No Railway: confira <strong>OPENAI_API_KEY</strong> nas Variáveis, faça redeploy e veja os logs ao clicar em ANALISAR.</div>';
       return;
     }
     const isFallback = result.confianca === 0 && (result.resumo || '').includes('Análise indisponível');
     if (isFallback) {
       aiBody.className = 'ai-body ready';
-      aiBody.innerHTML = '<div class="ai-error-msg">Análise indisponível. Configure <strong>OPENAI_API_KEY</strong> no backend (.env) para ativar análise com ChatGPT.</div>';
+      aiBody.innerHTML = '<div class="ai-error-msg">Análise indisponível. No Railway: adicione <strong>OPENAI_API_KEY</strong> nas Variáveis, faça redeploy e verifique os logs do serviço.</div>';
       return;
     }
     tok.aiAnalysis = result;
@@ -773,7 +773,7 @@ function updateCustomWCount() {
 function switchTab(tab, el) {
   qsa('.tab').forEach((t) => t.classList.remove('active'));
   el?.classList.add('active');
-  ['wallets', 'trades', 'alerts'].forEach((t) => {
+  ['wallets', 'trades', 'alerts', 'howto'].forEach((t) => {
     const el2 = $('tab-' + t);
     if (el2) el2.style.display = t === tab ? 'block' : 'none';
   });
@@ -1454,6 +1454,10 @@ window.clearAlerts = () => {
   state.unreadAlerts = 0;
   renderA();
   updateAlertBadge();
+};
+const DONATE_WALLET = 'AEn4Aq29dGCypLJcVeSKg9RGfhgm3DgbTPAW21nvYbKg';
+window.copyDonateWallet = () => {
+  navigator.clipboard.writeText(DONATE_WALLET).then(() => showToast('☕ Wallet copiada! Envie SOL para apoiar o dev.')).catch(() => showToast('Falha ao copiar'));
 };
 window.setF = (f, el) => {
   state.cFilter = f;

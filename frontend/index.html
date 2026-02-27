@@ -108,6 +108,7 @@
   <button class="tab active" onclick="sw('wallets',this)">📊 KOL Wallets</button>
   <button class="tab" onclick="sw('trades',this)">⚡ Trades Ao Vivo <span class="tbadge" id="tBadge">0</span></button>
   <button class="tab" onclick="sw('alerts',this)">🔔 Alertas <span id="aBadge" style="display:none;background:var(--red);color:#fff;border-radius:2px;font-size:9px;padding:1px 5px;font-weight:700">0</span></button>
+  <button class="tab" onclick="sw('howto',this)">📖 Como Usar</button>
 </nav>
 
 <!-- ═══ WALLETS ═══ -->
@@ -162,6 +163,60 @@
   </div>
 </div>
 
+<!-- ═══ COMO USAR ═══ -->
+<div id="tab-howto" class="howto-tab" style="display:none">
+  <div class="howto-inner">
+    <h2 class="howto-title">📖 Como usar o KOLBR</h2>
+    <p class="howto-intro">Guia rápido para quem chegou agora. A plataforma é gratuita e feita para traders brasileiros acompanharem o smart money na Solana.</p>
+    <div class="howto-steps">
+      <div class="howto-step">
+        <span class="howto-num">1</span>
+        <div>
+          <h3>📊 KOL Wallets</h3>
+          <p>Veja o ranking dos KOLs por PnL (lucro/prejuízo). O período padrão é <strong>Semanal (7 dias)</strong>. Clique em um card para abrir detalhes, últimos trades e ativar alertas.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <span class="howto-num">2</span>
+        <div>
+          <h3>⚡ Trades Ao Vivo</h3>
+          <p>Lista de compras e vendas dos KOLs nas últimas 24h. <strong>Clique em um trade</strong> para ver o painel à direita: market cap, liquidez, links (DexScreener, Rugcheck) e o botão <strong>ANALISAR</strong> para análise com ChatGPT.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <span class="howto-num">3</span>
+        <div>
+          <h3>🤖 Análise com ChatGPT</h3>
+          <p>No painel do token, clique em <strong>ANALISAR</strong> para gerar uma análise em português (veredito, confiança, riscos). A análise usa dados do token e do KOL que operou.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <span class="howto-num">4</span>
+        <div>
+          <h3>🔔 Alertas</h3>
+          <p>Ative alertas nas wallets que você quer acompanhar. Quando um KOL fizer um trade, você recebe notificação (com som, se habilitado).</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <span class="howto-num">5</span>
+        <div>
+          <h3>➕ Wallets customizadas</h3>
+          <p>Adicione até 10 wallets próprias para monitorar. Use o botão <strong>ADICIONAR WALLET</strong> na aba KOL Wallets.</p>
+        </div>
+      </div>
+    </div>
+    <div class="howto-tips">
+      <h3>💡 Dicas</h3>
+      <ul>
+        <li>O PnL é calculado com base nos trades do período selecionado (diário, semanal ou mensal).</li>
+        <li>Use o filtro <strong>Top 10</strong> ou <strong>PnL Positivo</strong> para focar nos melhores performers.</li>
+        <li>Configure o prompt extra em ⚙ Configurações para personalizar a análise do ChatGPT.</li>
+        <li>Links rápidos: DexScreener, Rugcheck, Solscan e Birdeye em cada token.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ ALERTS ═══ -->
 <div id="tab-alerts" style="display:none">
   <div class="alay">
@@ -203,6 +258,8 @@
     <a href="https://kolbr.up.railway.app/" target="_blank" rel="noopener">kolbr.up.railway.app</a>
     <span>·</span>
     <span class="footer-powered">Análise com ChatGPT · Feito para o Brasil 🇧🇷</span>
+    <span>·</span>
+    <a href="#" class="footer-donate" onclick="copyDonateWallet();return false;" title="Copiar wallet para doar SOL">☕ Apoie o dev</a>
     <span>·</span>
     <span id="lastUpdate">—</span>
     <span>·</span>

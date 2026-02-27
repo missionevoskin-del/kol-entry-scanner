@@ -37,7 +37,7 @@ async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
   const cached = getCachedAnalysis(cacheKey);
   if (cached) return cached;
 
-  const apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
+  const apiKey = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
   if (!apiKey || apiKey.length < 10) return null;
 
   const basePrompt = `Você é um analista sênior de criptoativos, especializado em memecoins e tokens emergentes na Solana. Sua análise é usada por traders brasileiros para decisões rápidas.
@@ -140,7 +140,9 @@ Operação: ${tradeType === 'buy' ? 'COMPRA' : 'VENDA'}
     setCachedAnalysis(cacheKey, result);
     return result;
   } catch (e) {
-    console.warn('[openai] Erro na análise:', e.message);
+    const status = e.response?.status;
+    const detail = e.response?.data?.error?.message || e.message;
+    console.warn('[openai] Erro na análise:', status ? `HTTP ${status}: ${detail}` : e.message);
     return null;
   }
 }

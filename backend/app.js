@@ -83,6 +83,16 @@ app.get('/api/trades/recent', (req, res) => {
   }
 });
 
+app.get('/api/debug-status', (req, res) => {
+  const openaiKey = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
+  const hasKey = !!openaiKey && openaiKey.length > 10;
+  res.json({
+    openaiConfigured: hasKey,
+    openaiKeyLength: openaiKey ? openaiKey.length : 0,
+    hint: hasKey ? 'Chave detectada. Se a análise falha, verifique logs ou rate limit.' : 'Chave ausente ou inválida. No Railway: Variáveis → OPENAI_API_KEY → Redeploy.',
+  });
+});
+
 app.get('/api/status', (req, res) => {
   const heliusKey = process.env.HELIUS_API_KEY || '';
   const openaiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '';
@@ -163,9 +173,16 @@ app.post('/api/analyze', async (req, res) => {
   try {
     const { token, kol, tradeType, customPrompt } = req.body;
     if (!token?.ca || !kol) return res.status(400).json({ error: 'token e kol obrigatórios' });
+    const openaiKey = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
+    if (!openaiKey || openaiKey.length < 10) {
+      console.warn('[analyze] OPENAI_API_KEY ausente ou inválida. No Railway: Variáveis → OPENAI_API_KEY → Redeploy.');
+      return res.json({ veredito: 'NEUTRO', confianca: 0, resumo: 'Análise indisponível' });
+    }
     const result = await analyzeToken(token, kol, tradeType || 'buy', customPrompt || '');
+    if (!result) console.warn('[analyze] analyzeToken retornou null (possível erro na API OpenAI)');
     res.json(result || { veredito: 'NEUTRO', confianca: 0, resumo: 'Análise indisponível' });
   } catch (e) {
+    console.error('[analyze] Erro:', e.message);
     res.status(500).json({ error: e.message });
   }
 });

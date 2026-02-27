@@ -423,6 +423,24 @@ td{padding:10px 14px;font-family:var(--mono);font-size:12px;color:#8a9ab0;vertic
 .toast{position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;color:var(--text);opacity:0;transform:translateY(8px);pointer-events:none;transition:all .25s ease;max-width:320px;box-shadow:var(--shadow-lg);}
 .toast.show{opacity:1;transform:translateY(0);}
 
+/* ── COMO USAR ── */
+.howto-tab{padding:24px 20px 48px;}
+.howto-inner{max-width:640px;margin:0 auto;}
+.howto-title{font-family:var(--display);font-size:1.75rem;font-weight:700;color:var(--text);margin:0 0 8px;letter-spacing:.04em;}
+.howto-intro{font-family:var(--sans);font-size:1rem;color:var(--muted2);line-height:1.6;margin-bottom:28px;}
+.howto-steps{display:flex;flex-direction:column;gap:20px;margin-bottom:28px;}
+.howto-step{display:flex;gap:16px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;}
+.howto-num{flex-shrink:0;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#0f1419;font-family:var(--mono);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.howto-step h3{font-family:var(--sans);font-size:1rem;font-weight:700;color:#e8eaed;margin:0 0 6px;}
+.howto-step p{font-family:var(--sans);font-size:13px;color:var(--muted2);line-height:1.6;margin:0;}
+.howto-tips{background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.15);border-radius:var(--radius-lg);padding:18px 20px;}
+.howto-tips h3{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin:0 0 12px;}
+.howto-tips ul{margin:0;padding-left:18px;}
+.howto-tips li{font-family:var(--sans);font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:6px;}
+.howto-tips li:last-child{margin-bottom:0;}
+.footer-donate{color:var(--accent)!important;}
+.footer-donate:hover{text-decoration:underline!important;}
+
 /* ── FOOTER ── */
 .app-footer{border-top:1px solid var(--border);}
 .footer-links{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--muted2);}

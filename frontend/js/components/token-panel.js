@@ -104,7 +104,7 @@ export function renderTokenDetail(tok, options = {}) {
         <div class="ai-title">🤖 Análise com ChatGPT</div>
         <button type="button" class="btn bp neon bsm" id="aiBtn">${tok.aiAnalysis ? 'RE-ANALISAR' : '🤖 ANALISAR'}</button>
       </div>
-      <div class="ai-body ${tok.aiAnalysis ? 'ready' : ''}" id="aiBody">${formatAIBody(tok.aiAnalysis) || (hasAnalysis ? 'Clique em ANALISAR para gerar análise com ChatGPT' : '<div class="ai-error-msg">Configure <strong>OPENAI_API_KEY</strong> no backend (.env) para ativar análise com ChatGPT.</div>')}</div>
+      <div class="ai-body ${tok.aiAnalysis ? 'ready' : ''}" id="aiBody">${formatAIBody(tok.aiAnalysis) || (hasAnalysis ? 'Clique em ANALISAR para gerar análise com ChatGPT' : '<div class="ai-error-msg">Configure <strong>OPENAI_API_KEY</strong> no Railway (Variáveis) e faça redeploy. Se já configurou, verifique os logs do serviço ao clicar em ANALISAR.</div>')}</div>
       ${tok.aiAnalysis ? '<div class="analysis-actions"><button type="button" class="btn bsm" id="aiShareBtn" title="Compartilhar no X">𝕏 Compartilhar</button><button type="button" class="btn bsm" id="aiCopyBtn" title="Copiar">📋 Copiar</button></div>' : ''}
       ${tok.aiAnalysis ? '<small class="ai-watermark">Análise com ChatGPT</small>' : ''}
     </div>`;
