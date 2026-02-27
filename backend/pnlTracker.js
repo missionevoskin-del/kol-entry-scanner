@@ -78,7 +78,7 @@ function getKolsByTier() {
 /**
  * Atualiza PnL de um grupo de KOLs
  */
-async function pollKolGroup(kols, groupName, period = 'daily') {
+async function pollKolGroup(kols, groupName, period = 'weekly') {
   if (!kols || kols.length === 0) return;
 
   console.log(`[pnlTracker] Polling ${groupName}: ${kols.length} wallets`);
@@ -124,8 +124,8 @@ function startTop5Polling() {
     timers.top5 = setTimeout(poll, interval);
   };
   
-  // Primeira execução após 30 segundos
-  timers.top5 = setTimeout(poll, 30 * 1000);
+  // Primeira execução após 8 segundos (período semanal = padrão do frontend)
+  timers.top5 = setTimeout(poll, 8 * 1000);
 }
 
 /**

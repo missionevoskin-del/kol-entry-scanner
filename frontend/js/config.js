@@ -22,7 +22,7 @@ const MAX_TRADES_RENDERED = 60;
 const AI_PROMPT_STORAGE_KEY = 'kolscan_ai_prompt';
 
 /** Última atualização do app (exibida no rodapé) */
-const LAST_UPDATE = '2026-02-25';
+const LAST_UPDATE = '2026-02-27';
 
 export {
   IS_PRODUCTION,

@@ -21,7 +21,7 @@ const PERIODS = {
  * Busca histórico de transações de uma wallet no Helius
  * Busca todas as transações recentes para calcular PnL corretamente
  */
-async function fetchWalletHistory(walletAddr, limit = 50) {
+async function fetchWalletHistory(walletAddr, limit = 100) {
   // Helius desativado por padrão — HELIUS_ENABLED=1 para reativar
   if (process.env.HELIUS_ENABLED !== '1' && process.env.HELIUS_ENABLED !== 'true') {
     return [];
@@ -33,10 +33,10 @@ async function fetchWalletHistory(walletAddr, limit = 50) {
   }
 
   try {
-    // Buscar transações recentes (sem filtro de before para pegar todas)
-    const url = `${HELIUS_API}/v0/addresses/${walletAddr}/transactions?api-key=${key}&limit=${limit}`;
+    // Buscar apenas SWAPs (formato compatível com Helius Enhanced Transactions)
+    const url = `${HELIUS_API}/v0/addresses/${walletAddr}/transactions?api-key=${key}&type=SWAP&limit=${limit}`;
     
-    console.log(`[pnlCalc] Buscando histórico: ${walletAddr.slice(0, 8)}...`);
+    console.log(`[pnlCalc] Buscando SWAPs: ${walletAddr.slice(0, 8)}...`);
     const { data } = await axios.get(url, { timeout: 15000 });
     
     if (!Array.isArray(data)) {
@@ -65,21 +65,20 @@ function parseSwapValue(tx) {
   if (!tx) return null;
 
   const type = (tx.type || '').toUpperCase();
-  
-  // Aceitar SWAP, TRANSFER e outros tipos relevantes
-  const isRelevant = type.includes('SWAP') || type.includes('TRANSFER') || type === 'UNKNOWN';
-  if (!isRelevant && type !== '') return null;
+  if (!type.includes('SWAP')) return null;
 
   const tokenTransfers = tx.tokenTransfers || [];
   const nativeTransfers = tx.nativeTransfers || [];
-  const feePayer = tx.feePayer || '';
+  const feePayer = (tx.feePayer || '').toString();
+
+  // Fallback: tokenBalanceChanges (alguns formatos Helius)
+  const balanceChanges = tx.accountData?.flatMap((a) => a.tokenBalanceChanges || []) || [];
 
   let valueSol = 0;
   let valueUsdc = 0;
   let direction = 'buy';
   let tokenMint = null;
 
-  // SOL wrapped address
   const SOL_MINT = 'So11111111111111111111111111111111111111112';
 
   for (const t of tokenTransfers) {
@@ -87,15 +86,10 @@ function parseSwapValue(tx) {
     const to = (t.toUserAccount || t.toTokenAccount || '').toString();
     const mint = (t.mint || t.tokenAddress || '').toString();
 
-    // Ignorar SOL wrapped para token principal
     if (mint && mint !== SOL_MINT) {
       tokenMint = mint;
-      // Se o feePayer está enviando o token = sell, recebendo = buy
-      if (from === feePayer || from.includes(feePayer.slice(0, 10))) {
-        direction = 'sell';
-      } else if (to === feePayer || to.includes(feePayer.slice(0, 10))) {
-        direction = 'buy';
-      }
+      if (from === feePayer || (feePayer && from.startsWith(feePayer.slice(0, 8)))) direction = 'sell';
+      else if (to === feePayer || (feePayer && to.startsWith(feePayer.slice(0, 8)))) direction = 'buy';
     }
 
     const sym = (t.tokenSymbol || '').toUpperCase();
@@ -104,24 +98,29 @@ function parseSwapValue(tx) {
     }
   }
 
-  // Calcular valor em SOL das transferências nativas
-  for (const t of nativeTransfers || []) {
-    const amount = Math.abs((t.amount || 0) / 1e9);
-    if (amount > 0.0001) { // Ignorar dust
-      valueSol += amount;
+  // Fallback tokenBalanceChanges
+  if (valueUsdc === 0 && balanceChanges.length > 0) {
+    for (const b of balanceChanges) {
+      const mint = (b.mint || b.tokenAddress || '').toString();
+      if (mint && mint !== SOL_MINT) tokenMint = tokenMint || mint;
+      const amt = Math.abs(parseFloat(b.tokenAmount) || parseFloat(b.amount) || 0);
+      if (amt > 0) valueUsdc += amt;
     }
   }
 
-  // Usar preço do SOL da variável de ambiente
+  for (const t of nativeTransfers || []) {
+    const amount = Math.abs((t.amount || 0) / 1e9);
+    if (amount > 0.0001) valueSol += amount;
+  }
+
   const solPrice = parseFloat(process.env.SOL_PRICE) || 170;
   const valUsd = valueUsdc > 0 ? valueUsdc : valueSol * solPrice;
 
-  // Ignorar transações muito pequenas
-  if (valUsd < 1) return null;
+  if (valUsd < 1 || !tokenMint) return null;
 
   return {
     signature: tx.signature,
-    timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
+    timestamp: tx.timestamp ? (typeof tx.timestamp === 'number' ? tx.timestamp * 1000 : tx.timestamp) : Date.now(),
     type: direction,
     tokenMint,
     valueSol,
