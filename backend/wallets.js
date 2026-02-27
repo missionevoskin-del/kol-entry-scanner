@@ -30,11 +30,12 @@ const KOLS_FALLBACK = [
   { name: 'cross', handle: '@cross', twitter: 'cross920x', twitterUrl: 'https://x.com/cross920x', wallet: '7BFAAyyxi6j8AUv6RgUBCYC5EM3RWPTZjDrafv4Txjva', chain: 'SOL', group: '' },
 ];
 
-// Carrega KOLs do arquivo JSON
+// Carrega KOLs do arquivo JSON (suporta array ou { kols: [...] })
 function loadFromFile(filepath) {
   try {
     if (fs.existsSync(filepath)) {
-      return JSON.parse(fs.readFileSync(filepath, 'utf8'));
+      const raw = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+      return Array.isArray(raw) ? raw : (raw?.kols || []);
     }
   } catch (e) {
     console.error('[wallets] Erro ao carregar', filepath, e.message);

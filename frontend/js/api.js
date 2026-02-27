@@ -127,7 +127,10 @@ export async function fetchKolsPnL(period = 'daily') {
       const data = await r.json();
       return data?.kols || (Array.isArray(data) ? data : []);
     }
-  } catch (e) {}
+    if (r.status >= 500) console.warn('[api] /api/kols/pnl', r.status);
+  } catch (e) {
+    console.warn('[api] fetchKolsPnL:', e.message);
+  }
   return null;
 }
 
@@ -142,7 +145,10 @@ export async function fetchKols(retries = 3) {
         const data = await r.json();
         return data?.kols ?? (Array.isArray(data) ? data : []);
       }
-    } catch (e) {}
+      if (r.status >= 500 && i === retries - 1) console.warn('[api] /api/kols', r.status);
+    } catch (e) {
+      if (i === retries - 1) console.warn('[api] fetchKols:', e.message);
+    }
     if (i < retries - 1) await new Promise((r) => setTimeout(r, 800 * (i + 1)));
   }
   return null;

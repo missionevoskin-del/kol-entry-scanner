@@ -66,10 +66,6 @@ function rankKolsForPeriod(period = 'daily') {
     .sort((a, b) => a.rankPnl - b.rankPnl);
 }
 
-if (!process.env.VERCEL) {
-  app.use(express.static(path.join(__dirname, '..', 'frontend')));
-}
-
 app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.get('/api/trades/recent', (req, res) => {
@@ -228,6 +224,9 @@ app.post('/api/cache/clear', (req, res) => {
   }
 });
 
+if (!process.env.VERCEL) {
+  app.use(express.static(path.join(__dirname, '..', 'frontend')));
+}
 app.get('/', (req, res) => res.redirect('/index.html'));
 
 module.exports = app;

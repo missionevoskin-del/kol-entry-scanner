@@ -351,8 +351,8 @@ function mergeCustomWalletsIntoKols() {
 // ─── WALLETS ───────────────────────────────────────────────────────────
 function getFilteredAndSortedKols() {
   mergeCustomWalletsIntoKols();
-  // Mostra só KOLs com Twitter (exceto wallets custom do usuário)
-  let data = state.KOLS.filter((k) => k.custom || k.twitter || k.twitterUrl);
+  // Mostra KOLs com identificador (custom, twitter ou handle)
+  let data = state.KOLS.filter((k) => k.custom || k.twitter || k.twitterUrl || (k.handle && String(k.handle).trim()));
   if (state.cFilter === 'custom') {
     data = data.filter((k) => k.custom);
   }
@@ -927,16 +927,17 @@ function closeSettingsModal() {
 }
 
 // ─── PnL PERIOD ──────────────────────────────────────────────────────
-async function loadKolsWithPnL(period = 'daily') {
+async function loadKolsWithPnL(period = 'daily', skipRefresh = false) {
   const periodMap = { D: 'daily', W: 'weekly', M: 'monthly' };
   state.currentPeriod = periodMap[period] || period;
   if (state.pnlLoading) return;
   state.pnlLoading = true;
   try {
-    if (state.currentPeriod !== 'daily') {
-      await refreshPnL(state.currentPeriod);
+    if (!skipRefresh && state.currentPeriod !== 'daily') {
+      try { await refreshPnL(state.currentPeriod); } catch (_) { /* ignora 429, continua */ }
     }
-    const kols = await fetchKolsPnL(state.currentPeriod);
+    let kols = await fetchKolsPnL(state.currentPeriod);
+    if (!kols?.length) kols = await fetchKols();
     if (kols?.length) {
       state.lastFetchAt = Date.now();
       savePnlCache(state.currentPeriod, kols);
