@@ -8,6 +8,7 @@ import {
   BRL_UPDATE_INTERVAL_MS,
   SEARCH_DEBOUNCE_MS,
   AI_PROMPT_STORAGE_KEY,
+  LAST_UPDATE,
 } from './config.js';
 import { fmt, fmtSub, fmtMC } from './utils/format.js';
 import { fetchTokenData, analyzeTokenAI, fetchBRLRate, fetchApiStatus, fetchKolsPnL, fetchKols, refreshPnL, fetchWalletPnL, fetchRecentTrades } from './api.js';
@@ -1309,6 +1310,9 @@ async function init() {
   setupNotifToggle();
   setupEventDelegation();
   maybeShowOnboarding();
+
+  const footerVer = $('footerVersion');
+  if (footerVer && LAST_UPDATE) footerVer.textContent = `v${LAST_UPDATE}`;
 
   updateCustomWCount();
   renderW();
