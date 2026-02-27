@@ -53,7 +53,7 @@ async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
 2. **Ownership & Renúncia**: Dev renunciou? LP travada? Metadados imutáveis? Quanto % nos top holders?
 3. **Taxas**: Compra/venda > 5% cada = bandeira vermelha. 0-3% = aceitável.
 4. **Volume e Fluxo**: Compras 24h vs Vendas. Ratio > 1.5 pode indicar momentum; < 0.5 pode ser dump.
-5. **KOL que operou**: Win rate > 70% e rank alto são positivos. WR < 50% ou entrada tardia = cautela.
+5. **KOL que operou**: Win rate > 70% e rank alto são positivos. WR < 50% ou entrada tardia = cautela. No resumo, contextualize: "KOL X (WR 72%, #3) costuma entrar em tokens com LP > $50k" ou "KOL com WR baixo entrando em token de alto risco = cautela redobrada".
 6. **Idade do token**: Tokens com < 1h de vida = máximo risco. 24h+ com LP estável = mais confiável.
 7. **Narrativa**: Tem story? Comunidade no X/Telegram? Ou é token genérico sem catalisador?
 
@@ -85,6 +85,10 @@ ${userPrompt}`
   const change24 = tokenData.priceChange24h ?? tokenData.change ?? 0;
   const change1h = tokenData.priceChange1h ?? 0;
 
+  const kolContext = kol
+    ? `KOL ${kol.name} (Win Rate ${kol.winRate ?? 0}%, Rank #${kol.rank ?? '?'}) — ${(kol.winRate ?? 0) >= 65 ? 'KOL forte, histórico positivo' : (kol.winRate ?? 0) < 50 ? 'KOL com WR baixo, cautela' : 'KOL mediano'}. Considere o perfil do KOL ao explicar por que ele pode ter entrado/saído.`
+    : 'KOL desconhecido';
+
   const tokenInfo = `
 Token: ${tokenData.name || '?'} (${tokenData.symbol || '?'})
 Contrato: ${ca}
@@ -95,8 +99,9 @@ Ratio LP/MC: ${mc > 0 ? ((liq / mc) * 100).toFixed(2) : 0}%
 Volume 24h: $${Number(vol).toLocaleString()}
 Compras 24h: ${tokenData.buys || 0} | Vendas 24h: ${tokenData.sells || 0}
 Variação 1h: ${change1h}% | 24h: ${change24}%
-KOL: ${kol?.name || '?'} (WR: ${kol?.winRate ?? 0}%, Rank #${kol?.rank ?? '?'})
 Operação: ${tradeType === 'buy' ? 'COMPRA' : 'VENDA'}
+
+${kolContext}
 `;
 
   try {

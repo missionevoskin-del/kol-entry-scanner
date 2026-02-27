@@ -65,9 +65,10 @@ if (HELIUS_ENABLED) {
   }, 3000);
 
   pnlTracker.start((updatedKols, groupName, period) => {
-    pnlCache.invalidate(period || 'daily');
-    broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, period: period || 'daily', timestamp: Date.now() } });
-    console.log(`[server] PnL atualizado: ${updatedKols.length} KOLs (${groupName}, ${period || 'daily'})`);
+    const p = period || 'weekly';
+    pnlCache.invalidate(p);
+    broadcast({ type: 'pnl_update', data: { kols: updatedKols, group: groupName, period: p, timestamp: Date.now() } });
+    console.log(`[server] PnL atualizado: ${updatedKols.length} KOLs (${groupName}, ${p})`);
   });
   console.log('[server] Sistema de polling escalonado iniciado');
 } else {

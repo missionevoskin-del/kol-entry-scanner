@@ -39,7 +39,7 @@
 <!-- BANNER SETUP (mostrar quando Helius não configurado) -->
 <div id="banner-setup" class="banner-setup" style="display:none" role="alert">
   <div class="banner-inner">
-    <span>⚙️ Configure as APIs (Helius + OpenAI) para habilitar dados em tempo real.</span>
+    <span>Configure <strong>HELIUS_API_KEY</strong> e <strong>HELIUS_ENABLED=1</strong> no Railway para ver trades em tempo real e PnL das wallets. Sem isso, os dados ficam zerados.</span>
     <a href="https://railway.com/template/kolbr-entry" target="_blank" rel="noopener" class="banner-link">Ver tutorial</a>
   </div>
 </div>
@@ -208,11 +208,24 @@
         </div>
       </div>
     </div>
+    <div class="howto-glossary">
+      <h3>📚 Como ler um trade</h3>
+      <p>Quando você clica em um trade, o painel mostra métricas importantes. Entenda cada uma:</p>
+      <ul class="glossary-list">
+        <li><strong title="Valor total de todas as moedas em circulação × preço atual">MC (Market Cap)</strong> — valor de mercado do token. Tokens com MC &lt; $100k são mais voláteis.</li>
+        <li><strong title="Liquidez = dinheiro disponível no pool para comprar/vender">LP (Liquidez)</strong> — dinheiro no pool da DEX. LP/MC &lt; 5% = alto risco de rug.</li>
+        <li><strong title="Diferença entre preço esperado e preço executado">Slippage</strong> — em tokens pequenos, sua ordem pode executar pior que o preço mostrado.</li>
+        <li><strong title="Quando o dev some com a liquidez">Rug</strong> — o criador remove a LP e some com o dinheiro. Sempre confira Rugcheck.</li>
+        <li><strong title="Token que só permite comprar, não vender">Honeypot</strong> — você compra mas não consegue vender. Rugcheck indica.</li>
+        <li><strong title="Fase inicial do token no pump.fun antes de migrar para DEX">Bonding curve</strong> — etapa inicial no pump.fun. Migration = token “graduou” para Raydium/Meteora.</li>
+      </ul>
+    </div>
     <div class="howto-tips">
       <h3>💡 Dicas</h3>
       <ul>
         <li>O PnL é calculado com base nos trades do período selecionado (diário, semanal ou mensal).</li>
         <li>Use o filtro <strong>Top 10</strong> ou <strong>PnL Positivo</strong> para focar nos melhores performers.</li>
+        <li>O <strong>Score de Risco</strong> no painel do token combina LP/MC, liquidez, idade e KOL. 10 = mais seguro.</li>
         <li>Configure o prompt extra em ⚙ Configurações para personalizar a análise do ChatGPT.</li>
         <li>Links rápidos: DexScreener, Rugcheck, Solscan e Birdeye em cada token.</li>
       </ul>

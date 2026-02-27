@@ -215,7 +215,7 @@ async function calculateWalletPnL(walletAddr, period = 'daily') {
   // 2. Buscar histórico adicional do Helius (se necessário)
   let heliusTrades = [];
   try {
-    const history = await fetchWalletHistory(walletAddr, 30);
+    const history = await fetchWalletHistory(walletAddr, 100);
     heliusTrades = history
       .map(parseSwapValue)
       .filter(Boolean)

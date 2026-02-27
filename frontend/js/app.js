@@ -1266,7 +1266,8 @@ async function init() {
   
   // Determina o modo da API
   // Modo REAL: Helius configurado E habilitado E OpenAI configurado
-  if (apiStatus.helius && apiStatus.helixEnabled !== false && apiStatus.openai) {
+  const heliusOk = apiStatus.helius && apiStatus.heliusEnabled;
+  if (heliusOk && apiStatus.openai) {
     state.apiMode = 'real';
   } else if (apiStatus.helius || apiStatus.openai) {
     state.apiMode = 'demo'; // Parcialmente configurado
@@ -1276,7 +1277,9 @@ async function init() {
   
   updateModeIndicator();
   
-  if (!apiStatus.helius) $('banner-setup').style.display = 'block';
+  // Banner: mostrar quando Helius não está configurado ou não habilitado
+  const banner = $('banner-setup');
+  if (banner) banner.style.display = (!apiStatus.helius || !apiStatus.heliusEnabled) ? 'block' : 'none';
 
   const tEmptyMsg = $('tEmptyMsg');
   const tEmptySub = $('tEmptySub');

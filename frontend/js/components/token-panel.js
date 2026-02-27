@@ -3,6 +3,7 @@
  */
 
 import { fmt, fmtMC } from '../utils/format.js';
+import { calculateRiskScore } from '../utils/riskScore.js';
 
 /**
  * Formata corpo da análise IA — layout premium
@@ -40,6 +41,8 @@ export function renderTokenDetail(tok, options = {}) {
     ? `<img src="${tok.imageUrl}" alt="${tok.name}" loading="lazy" onerror="this.parentElement.textContent='${tok.emoji || '●'}'">`
     : tok.emoji || '●';
 
+  const risk = calculateRiskScore(tok);
+
   let kolPnlHtml = '';
   if (kolPosition) {
     let pnlDisplay = '';
@@ -72,6 +75,10 @@ export function renderTokenDetail(tok, options = {}) {
         <div class="tptsym">${tok.symbol} · ${tok.desc || 'Token'}</div>
         <span class="cbadge csol" style="margin-top:4px;display:inline-block">SOL</span>
       </div>
+    </div>
+    <div class="risk-score-bar risk-score--${risk.cls}" title="Score de risco: ${risk.score}/10 (10 = mais seguro). Baseado em LP/MC, liquidez, idade e KOL.">
+      <span class="risk-score-label">Risco: ${risk.label}</span>
+      <span class="risk-score-value">${risk.score}/10</span>
     </div>
     <div class="tpgrid">
       <div class="tps"><div class="tpslbl">Market Cap</div><div class="tpsval ca">${fmtMC(tok.mc, cur, usdBRL)}</div></div>

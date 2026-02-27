@@ -13,10 +13,15 @@ Servidor sobe em `http://localhost:3001`. Deploy no Railway: `npm start` (porta 
 
 ### Variáveis de ambiente
 
-| Variável | Uso |
-|----------|-----|
-| `HELIUS_API_KEY` ou `HELIUS_RPC_KEY` | WebSocket + Enhanced Transactions |
-| `OPENAI_API_KEY` | Análise sob demanda (botão ANALISAR) |
+| Variável | Obrigatória | Uso |
+|----------|-------------|-----|
+| `HELIUS_API_KEY` | Sim | WebSocket (trades), Enhanced Tx, Address History (PnL). Sem ela: PnL zerado, trades vazios |
+| `HELIUS_ENABLED` | Sim | Deve ser `1` para ativar Helius. Sem isso o backend não coleta trades nem calcula PnL |
+| `OPENAI_API_KEY` | Para análise IA | Análise sob demanda (botão ANALISAR). Alternativa: `OPENAI_KEY` |
+| `PORT` | Não | Porta do servidor (default 3001) |
+| `SOL_PRICE` | Não | Fallback para conversão USD (default 150) |
+
+**Railway:** Após alterar variáveis, faça redeploy para carregar no processo.
 
 ## Estrutura do Projeto
 
