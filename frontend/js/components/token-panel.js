@@ -92,8 +92,8 @@ export function renderTokenDetail(tok, options = {}) {
     </div>
     <div class="ai-box" id="aiBox">
       <div class="ai-hdr">
-        <div class="ai-title">🤖 ANÁLISE GPT-4o mini</div>
-        <button type="button" class="btn by bsm" id="aiBtn">${tok.aiAnalysis ? 'RE-ANALISAR' : 'ANALISAR'}</button>
+        <div class="ai-title">🤖 KOLBR Analyst</div>
+        <button type="button" class="btn bp neon bsm" id="aiBtn">${tok.aiAnalysis ? 'RE-ANALISAR' : '🤖 ANALISAR'}</button>
       </div>
       <div class="ai-body" id="aiBody">${formatAIBody(tok.aiAnalysis) || 'Clique em ANALISAR para gerar análise com IA'}</div>
       ${tok.aiAnalysis ? '<div class="analysis-actions"><button type="button" class="btn bsm" id="aiShareBtn" title="Compartilhar no X">𝕏 Compartilhar</button><button type="button" class="btn bsm" id="aiCopyBtn" title="Copiar">📋 Copiar</button></div>' : ''}

@@ -207,13 +207,24 @@ function flashPnLCard(card, direction) {
 // ─── STATS ───────────────────────────────────────────────────────────
 function renderStats() {
   const kols = state.KOLS;
-  $('stW').textContent = kols.length;
+  animateStatValue($('stW'), kols.length);
   const periodKey = state.currentPeriod === 'daily' ? 'D' : state.currentPeriod === 'weekly' ? 'W' : 'M';
   updatePnLStat(kols, state.currentPeriod);
-  $('stT').textContent = state.tradeCnt;
-  $('stA').textContent = kols.filter((k) => k.alertOn).length;
+  animateStatValue($('stT'), state.tradeCnt);
+  animateStatValue($('stA'), kols.filter((k) => k.alertOn).length);
   updateAlertBadge();
   updateHeroCompactStats();
+}
+
+function animateStatValue(el, value) {
+  if (!el) return;
+  const prev = el.dataset.prevVal;
+  el.textContent = value;
+  el.dataset.prevVal = value;
+  if (prev !== undefined && String(prev) !== String(value)) {
+    el.classList.add('count-up');
+    setTimeout(() => el.classList.remove('count-up'), 500);
+  }
 }
 
 function updateHeroCompactStats() {
@@ -495,8 +506,8 @@ function attachAIBtnHandler(tok) {
     if (!_currentTok) return;
     runBtn.disabled = true;
     runBtn.textContent = '⏳ Analisando...';
-      aiBody.className = 'ai-body loading';
-    aiBody.innerHTML = '<div class="spinner" aria-hidden="true"></div><span>GPT-4o mini analisando o token...</span>';
+    aiBody.className = 'ai-body loading';
+    aiBody.innerHTML = '<div class="ai-skeleton"><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div><div class="ai-skeleton-line"></div></div><span style="font-size:9px;color:var(--muted)">KOLBR Analyst analisando...</span>';
     const tokenPayload = {
       ca: tok.ca,
       name: tok.name,

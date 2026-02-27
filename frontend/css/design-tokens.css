@@ -4,24 +4,30 @@
  */
 
 :root {
-  /* Cores base */
-  --color-bg: #04080c;
-  --color-bg-2: #070d13;
-  --color-surface: #0b141c;
-  --color-surface-2: #0e1c27;
-  --color-border: #152233;
-  --color-border-2: #1e3045;
+  /* Cores base — dark profundo Solana 2026 */
+  --color-bg: #0a0e12;
+  --color-bg-2: #0d1218;
+  --color-surface: #0f161e;
+  --color-surface-2: #131c26;
+  --color-border: #1a2433;
+  --color-border-2: #243044;
 
-  /* Cores cannabis */
+  /* Neon Solana — acento principal */
+  --solana-neon: #00ff88;
+  --solana-neon-dim: #00cc6a;
+  --solana-neon-glow: rgba(0,255,136,0.4);
+  --solana-neon-subtle: rgba(0,255,136,0.12);
+
+  /* Cores cannabis (compat) */
   --weed-green: #4a7c59;
-  --weed-green-light: #6abf7b;
+  --weed-green-light: #00ff88;
   --weed-gold: #c8a84b;
   --weed-purple: #6b4fa0;
-  --weed-smoke: rgba(74,124,89,0.08);
+  --weed-smoke: rgba(0,255,136,0.06);
 
   /* Cores semânticas */
-  --color-accent: var(--weed-green-light);
-  --color-green: #6abf7b;
+  --color-accent: var(--solana-neon);
+  --color-green: #00ff88;
   --color-red: #ff3b5c;
   --color-yellow: #ffcc00;
   --color-purple: #b06fff;
@@ -51,10 +57,11 @@
   --radius-md: 4px;
   --radius-lg: 8px;
 
-  /* Sombras */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 0 20px rgba(0, 212, 255, 0.15);
+  /* Sombras + neon */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 0 24px var(--solana-neon-glow);
+  --shadow-neon: 0 0 20px var(--solana-neon-glow), 0 0 40px rgba(0,255,136,0.15);
 
   /* Transições */
   --transition-fast: 0.12s ease;
