@@ -52,6 +52,24 @@ tr:hover .share-kol-btn,.w-card:hover .share-kol-btn{opacity:1;}
 .cfg-btn{padding:6px 12px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:transparent;border:1px solid var(--border2);color:var(--muted2);cursor:pointer;transition:all .15s;}
 .cfg-btn:hover{border-color:var(--yellow);color:var(--yellow);}
 
+/* ── MODE INDICATOR (DADOS REAIS vs DEMO) ── */
+.mode-indicator{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
+.mode-dot{width:6px;height:6px;border-radius:50%;background:var(--muted2);}
+.mode-indicator.mode-real .mode-dot{background:var(--green);box-shadow:0 0 6px var(--green);}
+.mode-indicator.mode-real{background:rgba(106,191,123,0.1);border-color:rgba(106,191,123,0.3);}
+.mode-indicator.mode-real .mode-label{color:var(--green);}
+.mode-indicator.mode-demo .mode-dot{background:var(--yellow);}
+.mode-indicator.mode-demo{background:rgba(255,204,0,0.08);border-color:rgba(255,204,0,0.2);}
+.mode-indicator.mode-demo .mode-label{color:var(--yellow);}
+.mode-indicator.mode-error .mode-dot{background:var(--red);}
+.mode-indicator.mode-error{background:rgba(224,85,64,0.08);border-color:rgba(224,85,64,0.2);}
+.mode-indicator.mode-error .mode-label{color:var(--red);}
+
+/* ── SOL PRICE ── */
+.sol-price{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
+.sol-icon{color:#9945ff;font-weight:700;}
+.sol-value{color:#e8eaed;font-weight:600;}
+
 /* ── HERO COMPACTO ── */
 .hero-compact{border-bottom:1px solid rgba(255,255,255,0.04);padding:10px 20px;background:rgba(0,255,150,0.015);}
 .hero-compact-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:nowrap;}
@@ -84,6 +102,8 @@ tr:hover .share-kol-btn,.w-card:hover .share-kol-btn{opacity:1;}
 .banner-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .banner-inner span{font-family:var(--sans);font-size:12px;color:var(--yellow);}
 .banner-inner small{font-family:var(--mono);font-size:9px;color:var(--muted2);}
+.banner-link{font-family:var(--mono);font-size:10px;color:#fff;background:rgba(255,255,255,0.1);padding:3px 8px;border-radius:3px;text-decoration:none;margin-left:auto;transition:background .15s;}
+.banner-link:hover{background:rgba(255,255,255,0.2);}
 .spinner-inline{display:inline-block;width:10px;height:10px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:4px;}
 
 /* ── STATS ── */

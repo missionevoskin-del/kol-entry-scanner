@@ -83,9 +83,18 @@ app.get('/api/trades/recent', (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
+  // Verifica se as chaves são válidas (não são placeholders)
+  const heliusKey = process.env.HELIUS_API_KEY || '';
+  const openaiKey = process.env.OPENAI_API_KEY || '';
+  
+  const isHeliusValid = heliusKey.length > 20 && !heliusKey.includes('sua_chave') && !heliusKey.includes('placeholder');
+  const isOpenAIValid = openaiKey.length > 20 && !openaiKey.includes('sua_chave') && !openaiKey.includes('sk-proj-sua');
+  
   res.json({
-    helius: !!process.env.HELIUS_API_KEY,
-    openai: !!process.env.OPENAI_API_KEY,
+    helius: isHeliusValid,
+    openai: isOpenAIValid,
+    heliusEnabled: process.env.HELIUS_ENABLED === '1',
+    solPrice: parseFloat(process.env.SOL_PRICE) || null,
     kols: getKols().length,
   });
 });

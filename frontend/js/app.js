@@ -20,6 +20,7 @@ import { renderKolStats, renderKolLinks, renderKolLastTrades } from './component
 // ─── STATE ─────────────────────────────────────────────────────────────
 let state = {
   usdBRL: 5.12,
+  solPrice: null,
   cur: 'BRL',
   cFilter: 'all',
   sKey: 'rankPnl',
@@ -37,7 +38,9 @@ let state = {
   searchDebounceTimer: null,
   lastFetchAt: null,
   lastWsMsgAt: null,
-  hasHelius: true,
+  hasHelius: false,
+  hasOpenAI: false,
+  apiMode: 'checking', // 'checking', 'demo', 'real', 'error'
 };
 const ONBOARDING_KEY = 'kolscan_onboarding_seen';
 const CUSTOM_WALLETS_KEY = 'customWallets';
@@ -59,6 +62,76 @@ const fmtF = (v) => fmt(v, state.cur, state.usdBRL);
 const fmtSubF = (v) => fmtSub(v, state.cur, state.usdBRL);
 const fmtMCF = (v) => fmtMC(v, state.cur, state.usdBRL);
 const formatCurrency = (v) => fmt(Math.abs(v || 0), state.cur, state.usdBRL);
+
+// ─── SOL PRICE (Tempo Real) ────────────────────────────────────────────
+/**
+ * Busca preço do SOL em tempo real via CoinGecko API (gratuita)
+ */
+async function fetchSolPrice() {
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true');
+    const data = await res.json();
+    if (data?.solana?.usd) {
+      state.solPrice = {
+        usd: data.solana.usd,
+        change24h: data.solana.usd_24h_change || 0
+      };
+      updateSolPriceDisplay();
+      return state.solPrice;
+    }
+  } catch (e) {
+    console.warn('[SOL] Erro ao buscar preço:', e.message);
+  }
+  return null;
+}
+
+function updateSolPriceDisplay() {
+  const el = $('solValue');
+  const container = $('solPrice');
+  if (!el || !state.solPrice) return;
+  
+  const price = state.solPrice.usd;
+  const change = state.solPrice.change24h;
+  const changeStr = change >= 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
+  
+  el.innerHTML = `${price.toFixed(0)} <span style="font-size:9px;color:${change >= 0 ? 'var(--green)' : 'var(--red)'}">${changeStr}</span>`;
+  
+  if (container) container.title = `SOL: ${price.toFixed(2)} (24h: ${changeStr})`;
+}
+
+// Atualiza preço SOL a cada 60 segundos
+setInterval(fetchSolPrice, 60000);
+
+// ─── MODE INDICATOR (DADOS REAIS vs DEMO) ────────────────────────────────
+function updateModeIndicator() {
+  const indicator = $('modeIndicator');
+  const dot = $('modeDot');
+  const label = $('modeLabel');
+  
+  if (!indicator || !dot || !label) return;
+  
+  // Remove todas as classes de modo
+  indicator.classList.remove('mode-real', 'mode-demo', 'mode-error');
+  
+  const mode = state.apiMode;
+  
+  if (mode === 'real') {
+    indicator.classList.add('mode-real');
+    label.textContent = 'DADOS REAIS';
+    indicator.title = 'Helius + OpenAI configurados - Dados em tempo real';
+  } else if (mode === 'demo') {
+    indicator.classList.add('mode-demo');
+    label.textContent = 'MODO DEMO';
+    indicator.title = 'APIs não configuradas - Exibindo dados de demonstração';
+  } else if (mode === 'error') {
+    indicator.classList.add('mode-error');
+    label.textContent = 'ERRO API';
+    indicator.title = 'Erro ao conectar com as APIs';
+  } else {
+    label.textContent = 'VERIFICANDO...';
+    indicator.title = 'Verificando configuração das APIs...';
+  }
+}
 
 // ─── PnL TOTAL STAT ───────────────────────────────────────────────────
 function calcTotalPnL(wallets) {
@@ -1131,6 +1204,12 @@ async function init() {
   const lastUp = $('lastUpdate');
   if (lastUp) lastUp.textContent = 'carregando...';
 
+  // Atualiza indicador de modo
+  updateModeIndicator();
+
+  // Busca preço do SOL em tempo real
+  await fetchSolPrice();
+
   const rate = await fetchBRLRate();
   if (rate) {
     state.usdBRL = rate;
@@ -1152,6 +1231,29 @@ async function init() {
 
   const apiStatus = await fetchApiStatus();
   state.hasHelius = !!apiStatus.helius;
+  state.hasOpenAI = !!apiStatus.openai;
+  
+  // Usa o preço do SOL do backend se disponível, caso contrário busca via CoinGecko
+  if (apiStatus.solPrice) {
+    state.solPrice = { usd: apiStatus.solPrice, change24h: 0 };
+    updateSolPriceDisplay();
+  } else {
+    // Busca preço do SOL via CoinGecko
+    await fetchSolPrice();
+  }
+  
+  // Determina o modo da API
+  // Modo REAL: Helius configurado E habilitado E OpenAI configurado
+  if (apiStatus.helius && apiStatus.helixEnabled !== false && apiStatus.openai) {
+    state.apiMode = 'real';
+  } else if (apiStatus.helius || apiStatus.openai) {
+    state.apiMode = 'demo'; // Parcialmente configurado
+  } else {
+    state.apiMode = 'demo'; // Nenhuma API configurada
+  }
+  
+  updateModeIndicator();
+  
   if (!apiStatus.helius) $('banner-setup').style.display = 'block';
 
   const tEmptyMsg = $('tEmptyMsg');
@@ -1223,20 +1325,37 @@ async function init() {
 
   setTimeout(() => {
     const dot = $('wsDot');
+    const liveLabel = $('liveLabel');
+    
     if (!state.wsConnected) {
       if (!state.KOLS.length) {
-        $('liveLabel').textContent = 'ERRO API';
+        if (liveLabel) liveLabel.textContent = 'ERRO API';
         dot?.setAttribute('data-status', 'error');
-      } else       if (!apiStatus.helius) {
-        $('liveLabel').textContent = 'API KEY NECESSÁRIA';
+        state.apiMode = 'error';
+      } else if (!state.hasHelius) {
+        if (liveLabel) liveLabel.textContent = 'API KEY NECESSÁRIA';
         dot?.setAttribute('data-status', 'error');
+        state.apiMode = 'demo';
       } else {
-        $('liveLabel').textContent = API_BASE ? 'API ATIVA' : 'DEMO';
+        // Helius configurado mas WebSocket não conectou
+        if (liveLabel) liveLabel.textContent = state.hasOpenAI ? 'API ATIVA' : 'SEM OPENAI';
         dot?.setAttribute('data-status', 'demo');
+        // Mantém modo demo se OpenAI não está configurado
+        if (!state.hasOpenAI) state.apiMode = 'demo';
       }
     } else {
+      // WebSocket conectado com sucesso
       dot?.setAttribute('data-status', 'connected');
+      if (liveLabel) liveLabel.textContent = 'AO VIVO';
+      
+      // Se WebSocket conectado E Helius E OpenAI configurados → modo real
+      if (state.hasHelius && state.hasOpenAI) {
+        state.apiMode = 'real';
+      } else if (state.hasHelius) {
+        state.apiMode = 'demo'; // Só Helius, sem OpenAI
+      }
     }
+    updateModeIndicator();
   }, 4000);
 }
 

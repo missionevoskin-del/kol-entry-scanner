@@ -1,0 +1,9 @@
+# KOLBR Analyst - Fine-tuning dependencies
+# pip install -r scripts/requirements-train.txt
+torch>=2.0
+transformers>=4.40
+datasets>=2.18
+peft>=0.10
+trl>=0.12
+bitsandbytes>=0.43
+accelerate>=0.28

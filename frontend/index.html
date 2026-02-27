@@ -39,7 +39,8 @@
 <!-- BANNER SETUP (mostrar quando Helius não configurado) -->
 <div id="banner-setup" class="banner-setup" style="display:none" role="alert">
   <div class="banner-inner">
-    <span>⚙️ Configure HELIUS_API_KEY no Railway para monitorar trades em tempo real.</span>
+    <span>⚙️ Configure as APIs (Helius + OpenAI) para habilitar dados em tempo real.</span>
+    <a href="https://railway.com/template/kolbr-entry" target="_blank" rel="noopener" class="banner-link">Ver tutorial</a>
   </div>
 </div>
 
@@ -55,6 +56,16 @@
     <div><h1>KOLBR</h1><p>Powered by Helius + GPT-4o mini 🌿</p></div>
   </div>
   <div class="trr">
+    <!-- Indicador de modo -->
+    <div class="mode-indicator" id="modeIndicator" title="Status das APIs">
+      <span class="mode-dot" id="modeDot"></span>
+      <span class="mode-label" id="modeLabel">VERIFICANDO...</span>
+    </div>
+    <!-- Preço SOL -->
+    <div class="sol-price" id="solPrice" title="Preço SOL em USD">
+      <span class="sol-icon">◎</span>
+      <span class="sol-value" id="solValue">$—</span>
+    </div>
     <div class="brlbox"><div><div class="bl">USD / BRL</div><div class="bv" id="brlVal">R$ 5,12</div></div></div>
     <div class="ctog"><button id="btnBRL" class="active" onclick="setCur('BRL')">R$</button><button id="btnUSD" onclick="setCur('USD')">$</button></div>
     <div class="livebadge" id="wsStatus" aria-live="polite" aria-label="Status da conexão" title="WebSocket: conectando"><div class="dot status-dot" id="wsDot" data-status="connecting"></div><span id="liveLabel">CONECTANDO...</span></div>

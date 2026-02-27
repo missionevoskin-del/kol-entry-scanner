@@ -1,0 +1,44 @@
+[
+  {
+    "ca": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "name": "USD Coin",
+    "symbol": "USDC",
+    "marketCap": 0,
+    "liquidity": 0,
+    "volume24h": 0,
+    "buys": 0,
+    "sells": 0,
+    "priceChange1h": 0,
+    "priceChange24h": 0,
+    "kol": { "name": "Santos", "wallet": "DXwu...GFH", "full": "DXwuEuLCjq44dHJtBNc6cNGyduHrQ7YwJSZdP69VXGFH", "winRate": 72, "rank": 3, "pnl": 1500 },
+    "tradeType": "buy",
+    "analysis": {
+      "veredito": "NEUTRO",
+      "confianca": 3,
+      "resumo": "USDC é stablecoin, não é memecoin. Análise não aplicável.",
+      "pontos_positivos": ["Stablecoin"],
+      "riscos": ["Não é token de trading"]
+    }
+  },
+  {
+    "ca": "So11111111111111111111111111111111111111112",
+    "name": "Wrapped SOL",
+    "symbol": "SOL",
+    "marketCap": 80000000,
+    "liquidity": 2500000,
+    "volume24h": 5000000,
+    "buys": 1200,
+    "sells": 950,
+    "priceChange1h": 2.5,
+    "priceChange24h": -1.2,
+    "kol": { "name": "ZecaPiranha", "wallet": "EHP4...UCB", "full": "EHP4W8X5kwXK1EQHQwy3gGRZzbfYAbST2jJpxVELPUCB", "winRate": 65, "rank": 5, "pnl": 800 },
+    "tradeType": "buy",
+    "analysis": {
+      "veredito": "NEUTRO",
+      "confianca": 6,
+      "resumo": "SOL nativo, LP/MC saudável. KOL mediano. Momentum neutro.",
+      "pontos_positivos": ["LP alto", "Volume forte"],
+      "riscos": ["Variação 24h negativa"]
+    }
+  }
+]
