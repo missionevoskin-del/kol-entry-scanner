@@ -41,16 +41,20 @@ function rankKolsForPeriod(period = 'daily') {
     };
   });
 
-  const byPnl = [...kols].sort((a, b) =>
-    (b.pnl - a.pnl) ||
-    (b.winRate - a.winRate) ||
-    a.name.localeCompare(b.name)
-  );
-  const byWinRate = [...kols].sort((a, b) =>
-    (b.winRate - a.winRate) ||
-    (b.pnl - a.pnl) ||
-    a.name.localeCompare(b.name)
-  );
+  // Wallets COM atividade (trades > 0) vêm primeiro no ranking; sem registro vão pro final
+  const hasActivity = (k) => (k.trades ?? 0) > 0 || (k.vol24 ?? 0) > 0;
+  const byPnl = [...kols].sort((a, b) => {
+    const actA = hasActivity(a) ? 1 : 0;
+    const actB = hasActivity(b) ? 1 : 0;
+    if (actB !== actA) return actB - actA;
+    return (b.pnl - a.pnl) || (b.winRate - a.winRate) || a.name.localeCompare(b.name);
+  });
+  const byWinRate = [...kols].sort((a, b) => {
+    const actA = hasActivity(a) ? 1 : 0;
+    const actB = hasActivity(b) ? 1 : 0;
+    if (actB !== actA) return actB - actA;
+    return (b.winRate - a.winRate) || (b.pnl - a.pnl) || a.name.localeCompare(b.name);
+  });
 
   const rankPnl = new Map(byPnl.map((k, i) => [k.id, i + 1]));
   const rankWinRate = new Map(byWinRate.map((k, i) => [k.id, i + 1]));

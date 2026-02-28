@@ -40,7 +40,7 @@ async function analyzeToken(tokenData, kol, tradeType, customPrompt) {
   const apiKey = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
   if (!apiKey || apiKey.length < 10) return null;
 
-  const basePrompt = `Você é um analista sênior de criptoativos, especializado em memecoins e tokens emergentes na Solana. Sua análise é usada por traders brasileiros para decisões rápidas.
+  const basePrompt = `Você é um analista sênior de criptoativos, especializado em memecoins e tokens emergentes na Solana. Sua análise é usada por traders brasileiros para decisões rápidas. Seja DETALHADO e COMPLETO.
 
 ## CONTEXTO DO ECOSSISTEMA SOLANA (2024-2025)
 - Solana é o principal ecossistema de memecoins, com alta velocidade e custos baixos.
@@ -67,9 +67,9 @@ Retorne APENAS um JSON válido (sem markdown, sem \`\`\`):
 {
   "veredito": "COMPRA" | "NEUTRO" | "EVITAR",
   "confianca": 1-10,
-  "resumo": "máximo 3 linhas em português, direto ao ponto",
-  "pontos_positivos": ["...", "..."],
-  "riscos": ["...", "..."]
+  "resumo": "4 a 5 linhas em português, análise completa com: dados do token (MC, LP, volume), perfil do KOL, principais riscos e recomendação prática (ex: 'entrar com stop', 'monitorar slippage', 'evitar por LP baixa')",
+  "pontos_positivos": ["pelo menos 2-4 itens específicos baseados nos dados"],
+  "riscos": ["pelo menos 2-4 itens específicos baseados nos dados"]
 }`;
   const userPrompt = (customPrompt || '').trim();
   const prompt = userPrompt
@@ -84,6 +84,13 @@ ${userPrompt}`
   const vol = tokenData.volume24h ?? tokenData.vol24h ?? 0;
   const change24 = tokenData.priceChange24h ?? tokenData.change ?? 0;
   const change1h = tokenData.priceChange1h ?? 0;
+  const holders = tokenData.holders ?? 0;
+  const taxB = tokenData.taxB ?? 0;
+  const taxS = tokenData.taxS ?? 0;
+  const age = tokenData.age ?? '?';
+  const renounced = tokenData.renounced ?? null;
+  const liqLocked = tokenData.liqLocked ?? null;
+  const buySellRatio = (tokenData.buys || 0) / Math.max(1, tokenData.sells || 1);
 
   const kolContext = kol
     ? `KOL ${kol.name} (Win Rate ${kol.winRate ?? 0}%, Rank #${kol.rank ?? '?'}) — ${(kol.winRate ?? 0) >= 65 ? 'KOL forte, histórico positivo' : (kol.winRate ?? 0) < 50 ? 'KOL com WR baixo, cautela' : 'KOL mediano'}. Considere o perfil do KOL ao explicar por que ele pode ter entrado/saído.`
@@ -98,7 +105,13 @@ Liquidez: $${Number(liq).toLocaleString()}
 Ratio LP/MC: ${mc > 0 ? ((liq / mc) * 100).toFixed(2) : 0}%
 Volume 24h: $${Number(vol).toLocaleString()}
 Compras 24h: ${tokenData.buys || 0} | Vendas 24h: ${tokenData.sells || 0}
+Ratio buy/sell: ${buySellRatio.toFixed(2)} (${buySellRatio > 1.5 ? 'momentum' : buySellRatio < 0.5 ? 'dump' : 'neutro'})
 Variação 1h: ${change1h}% | 24h: ${change24}%
+Holders: ${holders}
+Idade: ${age}
+Taxa compra: ${taxB}% | Taxa venda: ${taxS}%
+LP renunciada: ${renounced === true ? 'Sim' : renounced === false ? 'Não' : 'N/A'}
+LP travada: ${liqLocked === true ? 'Sim' : liqLocked === false ? 'Não' : 'N/A'}
 Operação: ${tradeType === 'buy' ? 'COMPRA' : 'VENDA'}
 
 ${kolContext}
@@ -113,8 +126,8 @@ ${kolContext}
           { role: 'system', content: prompt },
           { role: 'user', content: tokenInfo },
         ],
-        max_tokens: 500,
-        temperature: 0.4,
+        max_tokens: 650,
+        temperature: 0.35,
       },
       {
         headers: {

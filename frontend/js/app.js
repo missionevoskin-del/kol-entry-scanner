@@ -356,9 +356,20 @@ function getFilteredAndSortedKols() {
   if (state.cFilter === 'custom') {
     data = data.filter((k) => k.custom);
   }
-  // Ordenação: positivos, negativos, sem histórico (evita lacunas)
-  const byPnl = [...data].sort((a, b) => (b.pnl ?? -1e9) - (a.pnl ?? -1e9) || (b.winRate ?? 0) - (a.winRate ?? 0));
-  const byWr = [...data].sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0) || (b.pnl ?? -1e9) - (a.pnl ?? -1e9));
+  // Ordenação: com atividade primeiro, depois por PnL/WR; sem trades no período vão pro final
+  const hasActivity = (k) => (k.trades ?? 0) > 0 || (k.vol24 ?? 0) > 0;
+  const byPnl = [...data].sort((a, b) => {
+    const actA = hasActivity(a) ? 1 : 0;
+    const actB = hasActivity(b) ? 1 : 0;
+    if (actB !== actA) return actB - actA;
+    return (b.pnl ?? -1e9) - (a.pnl ?? -1e9) || (b.winRate ?? 0) - (a.winRate ?? 0);
+  });
+  const byWr = [...data].sort((a, b) => {
+    const actA = hasActivity(a) ? 1 : 0;
+    const actB = hasActivity(b) ? 1 : 0;
+    if (actB !== actA) return actB - actA;
+    return (b.winRate ?? 0) - (a.winRate ?? 0) || (b.pnl ?? -1e9) - (a.pnl ?? -1e9);
+  });
   const rankPnlMap = new Map(byPnl.map((k, i) => [k.id, i + 1]));
   const rankWrMap = new Map(byWr.map((k, i) => [k.id, i + 1]));
   data = data.map((k) => ({
@@ -373,20 +384,21 @@ function getFilteredAndSortedKols() {
   else if (state.cFilter === 'pnlpos') data = data.filter((k) => (k.pnl ?? 0) > 0);
   else if (state.cFilter === 'alert') data = data.filter((k) => k.alertOn);
 
-  // Ordenar: positivos (desc), negativos (menos negativo primeiro), sem histórico por último
+  // Ordenar: com atividade primeiro, depois por PnL; sem trades/volume no período vão pro final
+  const semRegistro = (k) => k._noHistory || ((k.trades ?? 0) === 0 && (k.vol24 ?? 0) === 0);
   data.sort((a, b) => {
-    const pa = a.pnl;
-    const pb = b.pnl;
-    const noHistA = a._noHistory || (pa === undefined || pa === null);
-    const noHistB = b._noHistory || (pb === undefined || pb === null);
+    const noHistA = semRegistro(a);
+    const noHistB = semRegistro(b);
     if (noHistA && noHistB) return (a.name || '').localeCompare(b.name || '');
     if (noHistA) return 1;
     if (noHistB) return -1;
+    const pa = a.pnl ?? -1e9;
+    const pb = b.pnl ?? -1e9;
     if (pa > 0 && pb > 0) return pb - pa;
     if (pa < 0 && pb < 0) return pb - pa;
     if (pa > 0 && pb <= 0) return -1;
     if (pa <= 0 && pb > 0) return 1;
-    return (pb ?? -1e9) - (pa ?? -1e9);
+    return pb - pa;
   });
   return data;
 }
@@ -521,6 +533,14 @@ function attachAIBtnHandler(tok) {
       buys: tok.buys,
       sells: tok.sells,
       change: tok.change,
+      priceChange24h: tok.change,
+      priceChange1h: tok.change1h,
+      holders: tok.holders,
+      age: tok.age,
+      taxB: tok.taxB,
+      taxS: tok.taxS,
+      renounced: tok.renounced,
+      liqLocked: tok.liqLocked,
     };
     const customPrompt = getFullAIPrompt();
     const result = await analyzeTokenAI(tokenPayload, tok.kol, tok.type, customPrompt);
