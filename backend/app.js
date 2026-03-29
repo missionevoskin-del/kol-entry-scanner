@@ -5,6 +5,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const logger = require('./logger');
 const { getKols, recomputeRanksByPnl, addKol, removeKol, getKolByWallet, getSolanaWallets } = require('./wallets');
 const { getTokenData } = require('./dexscreener');
 const { getRecentTrades } = require('./tradesStore');
@@ -15,6 +16,57 @@ const { getCacheStats, clearAllCache } = require('./txCache');
 const pnlCache = require('./pnlCache');
 
 const app = express();
+
+logger.info('app', 'Inicializando aplicação Express');
+
+// ============================================
+// Rate Limiting Middleware (simples, sem dependências extras)
+// ============================================
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 30; // 30 req/min por IP
+
+function rateLimitMiddleware(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  const now = Date.now();
+  
+  if (!rateLimitStore.has(ip)) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return next();
+  }
+  
+  const record = rateLimitStore.get(ip);
+  if (now > record.resetAt) {
+    record.count = 1;
+    record.resetAt = now + RATE_LIMIT_WINDOW_MS;
+    return next();
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfter = Math.ceil((record.resetAt - now) / 1000);
+    return res.status(429).json({ 
+      error: 'Rate limit excedido. Tente novamente em ' + retryAfter + 's', 
+      retryAfter 
+    });
+  }
+  
+  record.count++;
+  next();
+}
+
+// Aplicar rate limiting globalmente
+app.use(rateLimitMiddleware);
+
+// Limpeza periódica do rate limit store
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitStore.entries()) {
+    if (now > record.resetAt) {
+      rateLimitStore.delete(ip);
+    }
+  }
+}, 60 * 1000);
+
 app.use(cors());
 app.use(express.json());
 
@@ -70,15 +122,42 @@ function rankKolsForPeriod(period = 'daily') {
     .sort((a, b) => a.rankPnl - b.rankPnl);
 }
 
-app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/health', async (req, res) => {
+  const checks = {
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    helius: {
+      configured: !!process.env.HELIUS_API_KEY,
+      enabled: process.env.HELIUS_ENABLED === '1',
+    },
+    openai: {
+      configured: !!(process.env.OPENAI_API_KEY || process.env.OPENAI_KEY),
+    },
+    kols: getKols().length,
+    trades: getRecentTrades(1, 24).length,
+  };
+  
+  const allHealthy = Object.values(checks).every(v => 
+    typeof v === 'boolean' ? v : true
+  );
+  
+  logger.info('health', 'Health check realizado', { status: allHealthy ? 'healthy' : 'degraded', checks });
+  res.status(allHealthy ? 200 : 503).json({
+    status: allHealthy ? 'healthy' : 'degraded',
+    timestamp: new Date().toISOString(),
+    checks,
+  });
+});
 
 app.get('/api/trades/recent', (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 60, 200);
     const hours = parseInt(req.query.hours, 10) || 24;
     const trades = getRecentTrades(limit, hours);
+    logger.debug('trades', 'Buscando trades recentes', { limit, hours, count: trades.length });
     res.json({ trades, count: trades.length });
   } catch (e) {
+    logger.error('trades', 'Erro ao buscar trades recentes', { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });
@@ -169,20 +248,61 @@ app.get('/api/token/:ca', async (req, res) => {
   }
 });
 
+// ============================================
+// Validação de Input para /api/analyze
+// ============================================
+function validateAnalyzeRequest(body) {
+  const errors = [];
+  
+  if (!body.token || typeof body.token !== 'object') {
+    errors.push('token é obrigatório e deve ser um objeto');
+  } else if (!body.token.ca || typeof body.token.ca !== 'string') {
+    errors.push('token.ca (contract address) é obrigatório');
+  } else if (body.token.ca.length < 32) {
+    errors.push('token.ca parece inválido (muito curto para Solana)');
+  }
+  
+  if (!body.kol || typeof body.kol !== 'object') {
+    errors.push('kol é obrigatório e deve ser um objeto');
+  } else if (!body.kol.name) {
+    errors.push('kol.name é obrigatório');
+  }
+  
+  if (body.tradeType && !['buy', 'sell'].includes(body.tradeType)) {
+    errors.push('tradeType deve ser "buy" ou "sell"');
+  }
+  
+  if (body.customPrompt && typeof body.customPrompt !== 'string') {
+    errors.push('customPrompt deve ser uma string');
+  } else if (body.customPrompt && body.customPrompt.length > 1000) {
+    errors.push('customPrompt muito longo (máx 1000 caracteres)');
+  }
+  
+  return errors;
+}
+
 app.post('/api/analyze', async (req, res) => {
   try {
+    // Validar input
+    const validationErrors = validateAnalyzeRequest(req.body);
+    if (validationErrors.length > 0) {
+      logger.warn('analyze', 'Dados inválidos recebidos', { errors: validationErrors });
+      return res.status(400).json({ error: 'Dados inválidos', details: validationErrors });
+    }
+    
     const { token, kol, tradeType, customPrompt } = req.body;
-    if (!token?.ca || !kol) return res.status(400).json({ error: 'token e kol obrigatórios' });
     const openaiKey = (process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '').trim();
     if (!openaiKey || openaiKey.length < 10) {
-      console.warn('[analyze] OPENAI_API_KEY ausente ou inválida. No Railway: Variáveis → OPENAI_API_KEY → Redeploy.');
+      logger.warn('analyze', 'OPENAI_API_KEY ausente ou inválida');
       return res.json({ veredito: 'NEUTRO', confianca: 0, resumo: 'Análise indisponível' });
     }
+    logger.info('analyze', 'Iniciando análise de token', { ca: token.ca?.slice(0, 8), kol: kol.name, tradeType });
     const result = await analyzeToken(token, kol, tradeType || 'buy', customPrompt || '');
-    if (!result) console.warn('[analyze] analyzeToken retornou null (possível erro na API OpenAI)');
+    if (!result) logger.warn('analyze', 'analyzeToken retornou null');
+    logger.info('analyze', 'Análise concluída', { veredito: result?.veredito, confianca: result?.confianca });
     res.json(result || { veredito: 'NEUTRO', confianca: 0, resumo: 'Análise indisponível' });
   } catch (e) {
-    console.error('[analyze] Erro:', e.message);
+    logger.error('analyze', 'Erro durante análise', { error: e.message, stack: e.stack });
     res.status(500).json({ error: e.message });
   }
 });

@@ -23,9 +23,40 @@ let reconnectAttempts = 0;
 const HELIUS_WS = 'wss://mainnet.helius-rpc.com';
 const HELIUS_API = 'https://api.helius.xyz';
 
-// Cache de signatures processadas para evitar duplicatas
-const processedSignatures = new Set();
-const MAX_PROCESSED_CACHE = 1000;
+// Cache de signatures processadas para evitar duplicatas (com limite por tempo)
+const processedSignatures = new Map(); // signature -> timestamp
+const MAX_CACHE_AGE_MS = 5 * 60 * 1000; // 5 minutos
+const MAX_PROCESSED_CACHE = 2000;
+
+/**
+ * Verifica se signature já foi processada recentemente
+ */
+function isSignatureProcessed(sig) {
+  const ts = processedSignatures.get(sig);
+  if (!ts) return false;
+  if (Date.now() - ts > MAX_CACHE_AGE_MS) {
+    processedSignatures.delete(sig);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Marca signature como processada e faz limpeza periódica
+ */
+function markSignatureProcessed(sig) {
+  processedSignatures.set(sig, Date.now());
+  
+  // Limpeza periódica quando cache fica muito grande
+  if (processedSignatures.size > MAX_PROCESSED_CACHE) {
+    const now = Date.now();
+    for (const [key, ts] of processedSignatures.entries()) {
+      if (now - ts > MAX_CACHE_AGE_MS) {
+        processedSignatures.delete(key);
+      }
+    }
+  }
+}
 
 // Estatísticas de uso
 const wsStats = {
@@ -143,27 +174,21 @@ function getWalletFromResult(result) {
 
 /**
  * Processa notificação de transação do WebSocket
- * Otimizado: usa cache para evitar reprocessar signatures
+ * Otimizado: usa cache com tempo de expiração para evitar reprocessar signatures
  */
 async function handleTransactionNotification(result) {
   if (!result?.signature) return;
 
   const signature = result.signature;
   
-  // Verificar se já processamos esta signature (evitar duplicatas)
-  if (processedSignatures.has(signature)) {
+  // Verificar se já processamos esta signature recentemente (evitar duplicatas)
+  if (isSignatureProcessed(signature)) {
     wsStats.duplicatesSkipped++;
     return;
   }
   
   // Adicionar ao cache de processados
-  processedSignatures.add(signature);
-  
-  // Limpar cache se ficar muito grande
-  if (processedSignatures.size > MAX_PROCESSED_CACHE) {
-    const toDelete = Array.from(processedSignatures).slice(0, 200);
-    toDelete.forEach(sig => processedSignatures.delete(sig));
-  }
+  markSignatureProcessed(signature);
 
   const walletAddr = getWalletFromResult(result);
   if (!walletAddr) return;
